@@ -26,6 +26,17 @@ O Dynamic Anchor acompanha um rosto ou uma máscara do Premiere e gera o movimen
 
 Creative Cloud instalado. A análise de rosto roda no computador.
 
+## Interface
+
+<div align="center">
+<picture>
+  <source media="(prefers-color-scheme: light)" srcset="assets/interface-light.png">
+  <img alt="Painel do Dynamic Anchor com o alvo, os controles de zoom e a suavização." src="assets/interface-dark.png" width="430">
+</picture>
+<p><em>Ajuste a posição do alvo, o zoom e a suavização antes de aplicar o rastreamento.</em></p>
+<p>Capturas com dados de demonstração · <a href="assets/interface-dark.png">Tema escuro</a> · <a href="assets/interface-light.png">Tema claro</a></p>
+</div>
+
 ## Suporte e licenças
 
 Para relatar um problema, informe as versões do plugin e do Premiere e descreva os passos para reproduzi-lo. [Abrir um chamado](https://github.com/eusouored/dynamic-anchor/issues/new)
