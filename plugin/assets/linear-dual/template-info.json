@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "sequenceId": "692ae772-f43f-4db3-aeb2-22026d59323e",
+  "keyTime": 3600,
+  "keyTimes": [
+    3600,
+    360000
+  ],
+  "files": {
+    "reference.png": "0e318b49362482a1724572d2b9ab4d3422e80dd4118b98cc7e30e34c18b1c92b",
+    "Anchor-linear-template.prproj": "a889620e03c4d01b31fa2f30f7766549b37193d4dbee2f1fa5fb92cb00b592bd"
+  }
+}

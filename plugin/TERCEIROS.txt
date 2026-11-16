@@ -1,0 +1,86 @@
+DYNAMIC ANCHOR 1.7.2 — COMPONENTES DE TERCEIROS
+================================================
+
+O Dynamic Anchor é distribuído sob MIT + Commons Clause (ver LICENSE.txt).
+Esse texto vale só para o código próprio do Dynamic Anchor. O pacote também
+leva componentes de terceiros, cada um com a sua licença, listados abaixo.
+
+Levantamento feito a partir dos arquivos do pacote (licenças declaradas pelos
+próprios componentes). Não é parecer jurídico.
+
+
+RESUMO
+------
+
+[OK] Pode ser distribuído junto, mantendo os avisos de licença:
+     pako, Python, PyInstaller, NumPy, OpenBLAS, OpenCV (com a FFmpeg LGPL
+     dele), MediaPipe, ONNX, ONNX Runtime, Pillow, Matplotlib e fontes,
+     OpenSSL, libffi, runtime do Visual C++ e os modelos YuNet e MediaPipe
+     Face Landmarker.
+     Desde a 1.6.1, o motor de rosto não leva mais o PyAV nem a FFmpeg dele
+     (ligada ao x264 e ao x265, GPL). Os vídeos são lidos pela FFmpeg LGPL
+     que vem com o OpenCV, compilada sem partes GPL.
+
+[OK] DirectML.dll (Microsoft, "DirectML Redistributable Library" 1.15.4,
+     sem alteração, como vem no pacote onnxruntime-directml). A licença da
+     Microsoft para o DirectML permite distribuí-lo dentro de aplicativos para
+     Windows (não sozinho) e proíbe engenharia reversa e a remoção dos avisos.
+     Texto completo: https://www.nuget.org/packages/Microsoft.AI.DirectML/1.15.4/License
+
+[PENDENTE] Modelo de segmentação de cabeça (head_parsing_resnet18*.onnx):
+     vem do projeto face-parsing de Yakhyokhuja Valikhujaev (código MIT,
+     LICENSE-head-parsing.txt). Os pesos são treinados no conjunto de dados
+     CelebAMask-HQ, cujos termos restringem o uso a pesquisa e educação, sem
+     fins comerciais. O código MIT não muda isso. Sem o modelo, o motor usa a
+     referência do rosto (sem cabeça inteira).
+
+[OBRIGAÇÃO AO REDISTRIBUIR] FFmpeg do OpenCV (LGPL-2.1 ou posterior):
+     opencv_videoio_ffmpeg500_64.dll, a mesma do pacote opencv-python do PyPI:
+     FFmpeg 7.1 (libavformat 61.7.100) com libvpx, libaom e OpenH264, sem
+     --enable-gpl. Vai como DLL separada, que pode ser trocada. Código-fonte:
+     FFmpeg 7.1 em https://ffmpeg.org/releases/ e a receita de compilação do
+     OpenCV em https://github.com/opencv/opencv_3rdparty (ramo ffmpeg).
+
+
+LISTA DETALHADA
+---------------
+
+Painel (UXP)
+  pako (vendor/pako-inflate.js) ............ MIT — vendor/pako-LICENSE.txt
+
+Motor de rosto (motor-rosto/anchor-motor, empacotado com PyInstaller)
+  Python 3.12 (python312.dll e biblioteca padrão) .... PSF License 2.0
+  PyInstaller (carregador do executável) ............. GPL-2.0 com exceção
+                                                       para o carregador
+                                                       (permite distribuir o
+                                                       executável sob outra
+                                                       licença)
+  NumPy 2.5.4 ........................................ BSD-3-Clause e outras
+                                                       permissivas — numpy-*.dist-info/licenses
+  OpenBLAS (biblioteca do NumPy) ..................... BSD-3-Clause; inclui o
+                                                       runtime do GCC (GPL-3.0
+                                                       com a exceção de runtime)
+  OpenCV (cv2) ....................................... Apache-2.0
+  FFmpeg do OpenCV (opencv_videoio_ffmpeg500_64.dll) . LGPL-2.1 ou posterior
+                                                       (DLL separada)
+  MediaPipe 1.1.1 .................................... Apache-2.0 — LICENSE-mediapipe.txt, NOTICE-mediapipe.txt
+  ONNX 1.23.2 ........................................ Apache-2.0 — onnx-*.dist-info/licenses
+  ONNX Runtime 1.31.1 / ONNX Runtime DirectML 1.24.4 . MIT — onnxruntime/LICENSE,
+                                                       onnxruntime/ThirdPartyNotices.txt
+  DirectML.dll (Microsoft) ........................... termos da Microsoft (ver RESUMO)
+  Pillow ............................................. MIT-CMU (HPND)
+  Matplotlib ......................................... licença Matplotlib (estilo PSF)
+  Fontes DejaVu e STIX (Matplotlib) .................. licenças DejaVu/Bitstream Vera
+                                                       e OFL-1.1 — mpl-data/fonts/ttf/
+  OpenSSL 3 (libcrypto, libssl) ...................... Apache-2.0
+  libffi .............................................. MIT
+  Runtime do Visual C++ (msvcp140, vcruntime140,
+  ucrtbase, api-ms-win-*) ............................. Microsoft, redistribuível
+                                                        com aplicativos
+
+Modelos
+  YuNet (face_detection_yunet_2023mar.onnx) .......... MIT — LICENSE-yunet.txt
+  MediaPipe Face Landmarker (face_landmarker-v1.task)  Apache-2.0
+  Segmentação de cabeça ResNet18 ..................... MIT (código) —
+                                                       LICENSE-head-parsing.txt;
+                                                       pesos: ver RESUMO

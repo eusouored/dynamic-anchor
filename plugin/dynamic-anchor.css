@@ -1,0 +1,272 @@
+/* ============================================================
+   Dynamic Anchor 1.6.0 — interface da família Dynamic (kit 2026-11-14)
+   Carrega depois de bancada.css e só troca o visual: nenhum id, classe usada
+   pelo JS ou medida que o JS calcula muda aqui.
+   Segue as regras que já vinham do teste no Premiere (UXP):
+   - borda pintada: a caixa de fora tem a cor da borda e a .rl-in, 1 px menor, o fundo
+     (o Premiere corta a metade direita de uma borda CSS);
+   - caixas de marcar e rádios por imagem (contorno em CSS sai torto);
+   - sem overflow:hidden em elemento arredondado, sem pseudo-elementos, sombra,
+     gradiente ou calc(); cores translúcidas já misturadas (a .rl-in fica por cima da borda).
+   ============================================================ */
+
+/* ---------- tokens (escuro, padrão do Premiere) ---------- */
+.bancada {
+  --da-line: #2E2E35; --da-line-2: #42424B; --da-surface-2: #2A2A30; --da-raised: #3A3A42;
+  --da-track: #3A3A42; --da-fg-3: #85807A; --da-footer: #1F1F24;
+  --da-accent-soft: #3B3225; --da-accent-line: #7B6030; --da-low: #FFBF48;
+  --da-warn: #F2C14E; --da-warn-soft: #352F25; --da-ok: #5BD08F; --da-ok-soft: #24342F;
+  --b-bg: #1B1B1F; --b-inset: #141417; --b-surface: #222227; --b-line: #42424B;
+  --b-fg: #F5F3F0; --b-muted: #B8B3AC; --b-accent: #FFBF48; --b-accent-ink: #1B1B1F;
+  --b-orange: #FFBF48; --b-band: #222227; --b-accent-text: #FFBF48;
+  --b-weight-label: 700; --b-weight-medium: 700;
+  background: #1B1B1F; color: #F5F3F0;
+}
+.bancada.light {
+  --da-line: #E3DED6; --da-line-2: #D2CCC2; --da-surface-2: #F2EFEA; --da-raised: #FFFFFF;
+  --da-track: #D9D3CA; --da-fg-3: #8F8981; --da-footer: #EFEBE5;
+  --da-accent-soft: #F8E6C4; --da-accent-line: #D89A22; --da-low: #D89A22;
+  --da-warn: #8F5D00; --da-warn-soft: #FBEFD3; --da-ok: #1E7A47; --da-ok-soft: #D7E7DB;
+  --b-bg: #F5F3F0; --b-inset: #ECE8E2; --b-surface: #FFFFFF; --b-line: #D2CCC2;
+  --b-fg: #1B1B1F; --b-muted: #5E5952; --b-accent: #FFBF48; --b-accent-ink: #1B1B1F;
+  --b-orange: #FFBF48; --b-band: #FFFFFF; --b-accent-text: #8F5D00;
+  background: #F5F3F0; color: #1B1B1F;
+}
+
+/* ---------- cabeçalho: assinatura à esquerda, versões à direita ---------- */
+.bancada .b-header, .bancada.low .b-header {
+  height: 60px; min-height: 60px; padding: 0 16px; flex-direction: row; justify-content: space-between; align-items: center;
+  background: var(--b-bg); border-bottom: 1px solid var(--da-line);
+}
+.bancada .b-header h1.da-wordmark { display: flex; align-items: center; height: 21px; margin: 0; font-size: 0; line-height: 0; }
+.bancada .da-lockup { display: block; width: 162px; height: 21px; }
+.bancada .da-on-light { display: none; }
+.bancada.light .da-on-dark { display: none; }
+.bancada.light .da-on-light { display: block; }
+.bancada .b-author { margin-top: 5px; font-size: 10px; line-height: 14px; color: var(--da-fg-3); }
+.bancada .b-author-handle { color: var(--b-accent-text); }
+.bancada .b-header-version { display: flex; flex-direction: column; align-items: flex-end; font-size: 11px; line-height: 15px; color: var(--b-muted); }
+.bancada .b-header-version .da-version { color: var(--b-muted); }
+.bancada .b-engine-version { color: var(--da-fg-3); }
+.bancada.low .b-header { height: 44px; min-height: 44px; }
+.bancada.low .b-author { display: none; }
+.bancada.narrow .b-header { padding-left: 12px; padding-right: 12px; }
+.bancada.narrow .da-lockup { width: 139px; height: 18px; }
+.bancada.narrow .b-header h1.da-wordmark { height: 18px; }
+
+/* ---------- faixa do take ---------- */
+.bancada .take-card, .bancada.light .take-card { background: var(--b-band); border-bottom: 1px solid var(--da-line); padding-top: 10px; padding-bottom: 10px; }
+.bancada .take-card > .b-caption, .bancada.light .take-card > .b-caption {
+  margin: 0 0 3px; font-size: 10px; line-height: 14px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--da-fg-3);
+}
+.bancada .take-card .take-name, .bancada.light .take-card .take-name { font-size: 13px; line-height: 18px; font-weight: 700; color: var(--b-fg); }
+.bancada .take-chip, .bancada .take-chip[data-tone=""], .bancada .take-chip[data-tone="info"], .bancada .take-chip[data-tone="run"],
+.bancada.light .take-chip[data-tone="info"], .bancada.light .take-chip[data-tone="run"] {
+  height: 22px; padding: 0 9px 0 19px; border: 0; border-radius: 6px; font-size: 11px; line-height: 22px; font-weight: 700;
+  background-color: var(--da-surface-2); color: var(--b-muted);
+  background-image: url(icons/da-dot-muted-dark.svg); background-repeat: no-repeat; background-position: 8px 8px; background-size: 6px 6px;
+}
+.bancada.light .take-chip, .bancada.light .take-chip[data-tone=""], .bancada.light .take-chip[data-tone="info"], .bancada.light .take-chip[data-tone="run"] { background-image: url(icons/da-dot-muted-light.svg); }
+/* info = trajeto pronto/salvo (estado do plugin, no acento); ok = aplicado (verde de confirmação) */
+.bancada .take-chip[data-tone="info"], .bancada.light .take-chip[data-tone="info"] { background-color: var(--da-accent-soft); color: var(--b-accent-text); border: 0; background-image: url(icons/da-dot-accent-dark.svg); }
+.bancada.light .take-chip[data-tone="info"] { background-image: url(icons/da-dot-accent-light.svg); }
+.bancada .take-chip[data-tone="ok"], .bancada.light .take-chip[data-tone="ok"] { background-color: var(--da-ok-soft); color: var(--da-ok); border: 0; background-image: url(icons/da-dot-ok-dark.svg); }
+.bancada.light .take-chip[data-tone="ok"] { background-image: url(icons/da-dot-ok-light.svg); }
+.bancada .take-chip[data-tone="warn"], .bancada.light .take-chip[data-tone="warn"] { background-color: var(--da-warn-soft); color: var(--da-warn); border: 0; background-image: url(icons/da-dot-warn.svg); }
+/* as regras antigas usam o atalho "background:", que volta a repetir a imagem: posição e tamanho do ponto fixos aqui */
+.bancada .take-chip, .bancada .take-chip[data-tone], .bancada.light .take-chip, .bancada.light .take-chip[data-tone] {
+  background-repeat: no-repeat !important; background-position: 8px 8px !important; background-size: 6px 6px !important;
+}
+.bancada .take-chip[data-tone="bad"], .bancada.light .take-chip[data-tone="bad"] { background-color: var(--da-surface-2); color: var(--b-fg); border: 0; background-image: url(icons/da-dot-warn.svg); }
+
+/* ---------- seções numeradas ---------- */
+.b-section, .bancada .b-section { padding-top: 16px; padding-bottom: 16px; background: var(--b-bg); border-bottom: 1px solid var(--da-line); }
+.bancada .b-heading { min-height: 32px; margin-bottom: 12px; }
+.bancada .b-heading h2 { font-size: 14px; line-height: 18px; font-weight: 700; color: var(--b-fg); }
+.bancada .da-idx {
+  display: flex; align-items: center; justify-content: center; flex: none; width: 22px; height: 22px; margin-right: 10px;
+  border-radius: 6px; background: var(--da-surface-2); color: var(--b-muted); font-size: 11px; line-height: 14px; font-weight: 700;
+}
+.bancada #taskFrame .b-heading h2 { width: 74px; }
+.bancada #taskTrack .b-heading h2, .bancada #bReview .b-heading h2 { flex: 1 1 auto; }
+.bancada.narrow .b-heading h2, .bancada.narrow #taskFrame .b-heading h2 { width: auto; flex: 1 1 auto; margin: 0; }
+.bancada.narrow #taskFrame .b-zoom { width: 100%; margin-top: 8px; }
+.bancada .help, .bancada .face-state { color: var(--b-muted); }
+.bancada .b-caption { color: var(--b-muted); }
+
+/* ---------- botões ---------- */
+/* secundário (padrão): fundo surface-2, borda line-2 */
+.bancada [data-rl-paint=button] > .rl-in { background: var(--da-surface-2); }
+.bancada .file-button { color: var(--b-fg); }
+/* tonal: Analisar rosto, Ler máscara, Conferir próximo trecho */
+.bancada #btnFaceAuto[data-rl-paint], .bancada.light #btnFaceAuto[data-rl-paint],
+.bancada #btnReadMask[data-rl-paint], .bancada.light #btnReadMask[data-rl-paint],
+.bancada #btnFaceNextIssue[data-rl-paint], .bancada.light #btnFaceNextIssue[data-rl-paint] { background: var(--da-accent-line) !important; border-radius: 10px; }
+.bancada #btnFaceAuto > .rl-in, .bancada #btnReadMask > .rl-in, .bancada #btnFaceNextIssue > .rl-in {
+  padding: 0 !important; border-radius: 9px; background: var(--da-accent-soft) !important; color: var(--b-accent-text); font-weight: 700;
+}
+.bancada #btnFaceAuto > .rl-in > .file-title, .bancada.light #btnFaceAuto > .rl-in > .file-title,
+.bancada #btnReadMask > .rl-in > .file-title, .bancada.light #btnReadMask > .rl-in > .file-title {
+  height: 100%; background: transparent !important; color: var(--b-accent-text) !important; font-weight: 700;
+}
+/* principal: Aplicar rastreamento */
+.bancada #btnApply[data-rl-paint], .bancada.light #btnApply[data-rl-paint] { background: var(--b-accent) !important; border-radius: 10px; }
+.bancada #btnApply > .rl-in, .bancada.light #btnApply > .rl-in { padding: 0 !important; border-radius: 9px; background: var(--b-accent) !important; }
+.bancada #btnApply > .rl-in > #applyLabel, .bancada.light #btnApply > .rl-in > #applyLabel {
+  height: 100%; background: transparent !important; color: var(--b-accent-ink) !important; font-size: 13px; font-weight: 700;
+}
+/* desativados e sem take: caixa neutra, texto legível */
+.bancada #btnApply[data-rl-paint][aria-disabled=true], .bancada.light #btnApply[data-rl-paint][aria-disabled=true],
+.bancada #btnFaceAuto[data-rl-paint][aria-disabled=true], .bancada.light #btnFaceAuto[data-rl-paint][aria-disabled=true],
+.bancada.no-take #btnFaceAuto[data-rl-paint], .bancada.light.no-take #btnFaceAuto[data-rl-paint],
+.bancada #btnReadMask[data-rl-paint][aria-disabled=true], .bancada.light #btnReadMask[data-rl-paint][aria-disabled=true],
+.bancada #btnFaceNextIssue[data-rl-paint][aria-disabled=true], .bancada.light #btnFaceNextIssue[data-rl-paint][aria-disabled=true] { background: var(--b-line) !important; }
+.bancada #btnApply[aria-disabled=true] > .rl-in, .bancada.light #btnApply[aria-disabled=true] > .rl-in,
+.bancada #btnFaceAuto[aria-disabled=true] > .rl-in, .bancada.no-take #btnFaceAuto > .rl-in, .bancada.light.no-take #btnFaceAuto > .rl-in,
+.bancada #btnReadMask[aria-disabled=true] > .rl-in, .bancada #btnFaceNextIssue[aria-disabled=true] > .rl-in { background: var(--da-surface-2) !important; color: var(--b-muted); }
+.bancada #btnApply[aria-disabled=true] > .rl-in > #applyLabel, .bancada.light #btnApply[aria-disabled=true] > .rl-in > #applyLabel,
+.bancada #btnFaceAuto[aria-disabled=true] > .rl-in > .file-title, .bancada.light #btnFaceAuto[aria-disabled=true] > .rl-in > .file-title,
+.bancada.no-take #btnFaceAuto > .rl-in > .file-title, .bancada.light.no-take #btnFaceAuto > .rl-in > .file-title,
+.bancada #btnReadMask[aria-disabled=true] > .rl-in > .file-title, .bancada.light #btnReadMask[aria-disabled=true] > .rl-in > .file-title {
+  background: transparent !important; color: var(--b-muted) !important;
+}
+.bancada #btnApply[aria-disabled=true], .bancada #btnApply[aria-disabled=true] #applyLabel { color: var(--b-muted) !important; }
+/* foco: a borda pintada fica no acento */
+
+
+/* links de texto */
+.bancada .text-button, .bancada #btnFacePick, .bancada.light #btnFacePick { color: var(--b-accent-text); font-weight: 700; }
+.bancada #btnChooseProject { color: var(--b-muted); font-weight: 400; }
+/* recentralizar: botão de ícone em caixa */
+.bancada #btnResetOffset { width: 32px; height: 32px; min-height: 32px; border-radius: 8px; background: var(--da-surface-2); }
+
+/* ---------- segmentados (velocidade e obturador): selecionado neutro elevado ---------- */
+.bancada [data-rl-paint=seg] > .rl-in { background: var(--b-inset); }
+.bancada .b-seg-item { color: var(--b-muted); }
+.bancada .b-seg-item.selected, .bancada.light .b-seg-item.selected,
+.bancada .b-shutter-seg .b-preset.selected, .bancada.light .b-shutter-seg .b-preset.selected {
+  background: var(--da-raised) !important; color: var(--b-fg) !important; font-weight: 700;
+}
+.bancada.light .b-seg-item.selected, .bancada.light .b-shutter-seg .b-preset.selected { background: #FFFFFF !important; }
+
+/* ---------- seletores ---------- */
+.bancada .b-dd { background: var(--da-line-2); }
+.bancada .b-dd > .b-dd-btn { background: var(--b-inset) !important; }
+
+.bancada .b-dd-menu { background: var(--da-line-2); }
+.bancada .b-dd-list { background: var(--b-surface); }
+.bancada .b-dd-option:hover { background: var(--da-surface-2); }
+.bancada .b-dd-option.selected, .bancada.light .b-dd-option.selected { background: var(--da-raised); color: var(--b-accent-text) !important; font-weight: 700; }
+.bancada.light .b-dd-option.selected { background: var(--da-surface-2); }
+
+/* ---------- campos numéricos ---------- */
+.bancada [data-rl-paint=field] { background: var(--da-line-2) !important; }
+.bancada [data-rl-paint=field] > .rl-in { background: var(--b-inset); }
+.bancada .number-field .unit { color: var(--da-fg-3); }
+
+/* ---------- quadros: prévia, enquadramento, escolha de pessoa ---------- */
+.bancada [data-rl-paint=frame] { background: var(--da-line) !important; }
+.bancada [data-rl-paint=frame] > .rl-in { background: var(--b-inset); }
+.bancada #bFirstMessage { color: var(--da-fg-3); }
+.bancada #targetFrame .cross-x, .bancada #targetFrame .cross-y { background: var(--da-line); }
+.bancada #targetFrame .safe-action, .bancada #targetFrame .safe-title,
+.bancada.light #targetFrame .safe-action, .bancada.light #targetFrame .safe-title { border-color: var(--da-line-2); }
+
+/* ---------- painel largo: quadro e eixos juntos, centrados como a prévia ----------
+   O JS mede a largura da .target-wrap para dimensionar o quadro (até 180 px de altura: 320 px em 16:9).
+   Limitar a caixa a 320 px faz o quadro ocupá-la inteira e os eixos ficarem colados nele;
+   abaixo de ~484 px de painel nada muda. */
+.bancada .b-frame-row { justify-content: center; }
+.bancada .target-wrap { flex: 1 1 auto; max-width: 320px; margin-left: 0; margin-right: 12px; }
+
+/* ---------- eixos H/V ---------- */
+.bancada .b-axis > span { color: var(--b-muted); }
+.bancada .b-axis .b-axis-value { color: var(--b-fg); font-size: 13px; line-height: 18px; font-weight: 700; }
+.bancada .b-vslider .slider-track { background: var(--da-track) !important; }
+.bancada .b-vslider .rl-low, .bancada.light .b-vslider .rl-low { background: var(--da-low); }
+.bancada .b-vslider[aria-disabled=true] .rl-low { background: var(--da-track); }
+.bancada .b-vslider .slider-thumb, .bancada .rotation-row .slider-thumb {
+  background-color: transparent !important; background-image: url(icons/da-thumb-dark.svg) !important;
+  background-repeat: no-repeat !important; background-size: 16px 16px !important; background-position: 0 0 !important; border: 0;
+}
+.bancada.light .b-vslider .slider-thumb, .bancada.light .rotation-row .slider-thumb { background-image: url(icons/da-thumb-light.svg) !important; }
+.bancada .b-vslider[aria-disabled=true] .slider-thumb, .bancada.light .b-vslider[aria-disabled=true] .slider-thumb { background-image: url(icons/da-thumb-off.svg) !important; }
+
+
+/* caixa de cada eixo: centrada sob o trilho do slider (trilho no meio dos 32 px do slider).
+   As regras antigas de .tick-control (row-reverse, margens -2/4 px) a deslocavam 5 px para a esquerda. */
+.bancada .b-axis .check-control, .bancada .b-axis .tick-control {
+  display: flex; flex-direction: row; justify-content: center; align-items: center;
+  width: 32px; min-width: 32px; max-width: 32px; height: 20px; min-height: 20px; margin: 0; padding: 0;
+}
+.bancada .b-axis .check-control .check-visual { margin: 0 !important; }
+
+/* ---------- caixas de marcar (SVG por tema, mesma geometria ligada e desligada) ---------- */
+.bancada .check-control .check-visual, .bancada:not(.light) .check-control .check-visual { background-image: url(icons/da-check-off-dark.svg) !important; }
+.bancada.light .check-control .check-visual { background-image: url(icons/da-check-off-light.svg) !important; }
+.bancada:not(.light) .check-control[aria-checked=true] .check-visual,
+.bancada.light .check-control[aria-checked=true] .check-visual { background-image: url(icons/da-check-on.svg) !important; }
+
+/* ---------- destino e desfoque ---------- */
+.b-destination, .bancada .b-destination { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--da-line); }
+
+/* ---------- Avançados ---------- */
+.bancada .fold-toggle, .bancada .b-advanced .fold-toggle { color: var(--b-fg); font-weight: 700; }
+.bancada .b-advanced-row { border-bottom: 1px solid var(--da-line); }
+.bancada .b-advanced-row .check-label, .bancada .b-option-name { color: var(--b-fg); font-weight: 700; }
+.bancada .b-experimental {
+  margin-left: 8px; padding: 0 6px; height: 16px; border-radius: 4px; background: var(--da-surface-2);
+  color: var(--da-fg-3); font-size: 9px; line-height: 16px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+}
+.bancada .advanced-refresh-help {
+  margin: 12px 0; padding: 10px 12px; border-left: 3px solid var(--b-accent); border-radius: 4px;
+  background: var(--b-surface); color: var(--b-fg); font-size: 12px; line-height: 17px;
+}
+.bancada .b-more .fold-caption, .bancada .b-compose-fold > .fold-caption { color: var(--da-fg-3); }
+.bancada #bodyQuality h3, .bancada.light #bodyQuality h3 { margin: 14px 0 2px; font-size: 12px; line-height: 16px; font-weight: 700; color: var(--b-fg); }
+.bancada .method-group { margin-top: 10px; padding-top: 0; border-top: 0; }
+/* filtros e referência da máscara como lista de rádios */
+.bancada #bodyQuality .file-button[data-rl-paint], .bancada.light #bodyQuality .file-button[data-rl-paint] {
+  height: 40px !important; min-height: 40px !important; max-height: 40px; margin: 0 !important; padding: 0 !important;
+  background: transparent !important; border-radius: 0 !important; border-bottom: 1px solid var(--da-line) !important;
+}
+.bancada #bodyQuality .file-button > .rl-in, .bancada.light #bodyQuality .file-button > .rl-in {
+  justify-content: flex-start !important; padding: 0 0 0 28px; border-radius: 0; color: var(--b-muted); font-size: 12px;
+  background-color: transparent !important; background-image: url(icons/da-radio-off-dark.svg);
+  background-repeat: no-repeat; background-position: 0 12px; background-size: 16px 16px;
+}
+.bancada.light #bodyQuality .file-button > .rl-in { background-image: url(icons/da-radio-off-light.svg); }
+.bancada #bodyQuality .file-button[aria-pressed=true] > .rl-in { background-image: url(icons/da-radio-on-dark.svg); color: var(--b-fg); font-weight: 700; }
+.bancada.light #bodyQuality .file-button[aria-pressed=true] > .rl-in { background-image: url(icons/da-radio-on-light.svg); color: var(--b-fg); font-weight: 700; }
+
+/* ---------- rodapé ---------- */
+.b-footer, .bancada .b-footer { background: var(--da-footer); border-top: 1px solid var(--da-line); padding-top: 10px; padding-bottom: 12px; }
+.bancada .b-footer #status { color: var(--b-muted); }
+/* mensagem inteira (até 5 linhas; acima disso rola). Antes um erro de 3 linhas perdia o final, como "Nada foi gravado." */
+.b-footer #status, .b-footer #status.error, .bancada .b-footer #status, .bancada .b-footer #status.error {
+  max-height: 80px; overflow-x: hidden; overflow-y: auto; white-space: normal; text-overflow: clip; overflow-wrap: break-word; line-height: 16px;
+}
+.bancada .b-footer .status-line.error { border-left: 3px solid var(--da-warn); color: var(--b-fg); }
+
+/* ---------- foco ---------- */
+
+
+/* ---------- ícones com 1 px de folga (gerados por icones_uxp.py) ----------
+   O Premiere ignora o canto de <rect rx> e corta a última linha/coluna de uma forma que encosta
+   na borda da imagem. As imagens ficaram 2 px maiores; o desenho visível tem o tamanho de antes. */
+.bancada .check-control .check-visual, .bancada.light .check-control .check-visual,
+.bancada .check-control[aria-checked=true] .check-visual, .bancada.light .check-control[aria-checked=true] .check-visual,
+.bancada .b-advanced-row .check-control .check-visual, .bancada .b-axis .check-control .check-visual {
+  width: 16px !important; min-width: 16px !important; max-width: 16px !important; height: 16px !important;
+  background-size: 16px 16px !important; background-position: 0 0 !important; background-repeat: no-repeat !important;
+}
+.bancada #bodyQuality .file-button > .rl-in, .bancada.light #bodyQuality .file-button > .rl-in { background-size: 18px 18px; background-position: 0 11px; }
+.bancada .b-vslider .slider-thumb, .bancada .rotation-row .slider-thumb {
+  width: 18px !important; height: 18px !important; margin-left: -9px !important; margin-top: -9px !important;
+  background-size: 18px 18px !important;
+}
+.bancada .take-chip, .bancada .take-chip[data-tone], .bancada.light .take-chip, .bancada.light .take-chip[data-tone] {
+  background-position: 7px 7px !important; background-size: 8px 8px !important;
+}
+/* sem contorno de foco em nenhum controle (o painel não desenha borda amarela ao clicar) */
+.bancada [role]:focus, .bancada [tabindex]:focus, .bancada .b-seg-item:focus, .bancada sp-textfield:focus { outline: none; }

@@ -1,0 +1,28 @@
+# Builds (vÃ£o para a pÃ¡gina de Releases, nÃ£o para o repositÃ³rio)
+dist/
+*.ccx
+Instalar-*.exe
+
+# Motor empacotado e modelos (vÃ£o nas Releases)
+motor/motor-rosto/
+*.onnx
+*.task
+
+# Certificados e senhas: nunca publicar
+*.p12
+*.pfx
+senha*.txt
+assinatura/
+
+# Gerados pelo gerar_instalador.py
+instalador/Config.cs
+instalador/AssemblyInfo.cs
+
+# Testes e sistema
+testes/out/
+node_modules/
+__pycache__/
+*.pyc
+*.log
+Thumbs.db
+desktop.ini

@@ -1,0 +1,574 @@
+.bancada{--b-bg:#202326;--b-inset:#171b1e;--b-surface:#292d30;--b-line:#41484d;--b-fg:#e8edf0;--b-muted:#b1bec7;--b-orange:var(--b-accent);--b-type-note:11px;--b-type-body:12px;--b-type-label:13px;--b-type-section:14px;--b-type-brand:15px;--b-weight-body:400;--b-weight-medium:500;--b-weight-label:600;--b-radius-panel:8px;--b-radius-control:4px;--b-radius-frame:3px;--b-radius-circle:50%;position:absolute;top:0;bottom:0;left:0;right:0;display:block;max-width:none;margin:0;background:var(--b-bg);color:var(--b-fg);font-family:initial;font-size:var(--b-type-body);font-weight:var(--b-weight-body);line-height:1.4;overflow:hidden}
+.bancada.light{--b-bg:#edf0f2;--b-inset:#ffffff;--b-surface:#f8f9fa;--b-line:#c4cdd2;--b-fg:#202a30;--b-muted:#4f5e68;--b-orange:var(--b-accent)}
+.bancada *{box-sizing:border-box}.b-backstage{display:none!important}.bancada .hidden{display:none!important}
+.b-header{height:34px;min-height:34px;display:flex;align-items:center;justify-content:center;padding:0;background:var(--b-bg);border-bottom:1px solid var(--b-line)}.b-header h1{margin:0;font-size:var(--b-type-brand);font-weight:var(--b-weight-label);color:var(--b-fg)}
+.bancada .take-card{margin:0;padding:8px 14px;background:var(--b-orange);border:0;border-radius:0;color:#FEFEEF;min-height:58px}.bancada .take-name{font-size:var(--b-type-body);color:#FEFEEF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bancada .take-row{min-height:25px}.b-caption{display:block;color:var(--b-muted);font-size:var(--b-type-note);margin-bottom:4px}.take-card>.b-caption{color:#FEFEEF;margin:0}.bancada .take-chip{font-size:var(--b-type-note);background:transparent;border:0;color:#FEFEEF;padding:0 4px;max-width:130px}.bancada .take-meta{display:none}.bancada #btnRefreshSelection{background:transparent;border:0;min-width:24px;padding:3px}
+.bancada #scroller{position:absolute;left:0;right:0;overflow-y:auto;overflow-x:hidden}.bancada .contents{padding:0}.b-section{display:block;padding:12px 14px;border-bottom:1px solid var(--b-line);background:var(--b-bg)}.b-heading{display:flex;align-items:center;justify-content:space-between;min-height:30px;margin-bottom:8px;flex-wrap:wrap}.b-heading h2{font-size:var(--b-type-section);color:var(--b-fg);margin:0 10px 0 0}.bancada sp-dropdown{display:block;width:142px;margin:0;min-height:28px}.bancada .help{font-size:var(--b-type-note);line-height:16px;color:var(--b-muted);margin:5px 0}.bancada .file-title{font-size:var(--b-type-body);color:inherit}.bancada .file-button{background:var(--b-surface);border-color:var(--b-line);border-radius:4px;color:var(--b-fg);min-height:32px;padding:7px 9px;font-size:var(--b-type-body)}.bancada [role=button]>img:not(.chevron){display:none}.bancada .file-button .file-title{margin:0}.bancada #btnFaceAuto,.bancada #btnReadMask,.bancada #btnFaceNextIssue,.bancada #btnApply{background:var(--b-orange);color:#FEFEEF;border:1px solid var(--b-orange)}.bancada [aria-disabled=true]{opacity:.45}.bancada #btnApply[aria-disabled=true],.bancada #btnFaceAuto[aria-disabled=true],.bancada #btnReadMask[aria-disabled=true]{background:var(--b-surface);color:var(--b-muted);border-color:var(--b-line);opacity:1}
+#bFirstFrame{position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;margin:0 auto 8px;background:var(--b-inset);border:1px solid var(--b-line);border-radius:3px;width:100%;height:60px}#bFirstImage{position:absolute;left:0;top:0;width:100%;height:100%;display:none}#bFirstMessage{padding:8px;font-size:var(--b-type-note);color:var(--b-muted);text-align:center}.b-analysis{display:flex;align-items:center}.b-analysis sp-dropdown{width:112px;margin-right:8px}.b-analysis #btnFaceAuto{flex:1;min-width:0}.bancada #faceState{margin-top:7px}.bancada .b-compose{background:var(--b-surface);border-color:var(--b-line)}.b-warning{padding:7px 8px;margin:0 0 8px;border-left:3px solid var(--b-orange);background:var(--b-surface);font-size:var(--b-type-note);line-height:16px}.b-result{margin-top:8px}.b-result #trajectoryState{font-size:var(--b-type-note);margin:0;color:var(--b-muted)}.b-result #sourceInfo{display:none}.b-result #maskInfo{font-size:var(--b-type-note);line-height:15px;color:var(--b-muted);margin:4px 0}.bancada #btnProperties{min-height:22px;padding:2px 0;font-size:var(--b-type-note);background:transparent;border:0;color:var(--b-muted)}
+.b-zoom{display:flex;align-items:center;margin-right:auto}.b-zoom sp-dropdown{width:110px;margin-right:6px}.b-zoom .field{display:flex;margin:0;min-height:28px}.bancada .number-field{background:var(--b-inset);border:1px solid var(--b-line);border-radius:3px;width:64px;min-width:64px;max-width:64px;height:29px;margin:0 8px 0 0;padding:3px 5px}.bancada .number-display{color:var(--b-fg);font-size:var(--b-type-body)}.bancada .number-field .unit{color:var(--b-muted);width:auto;font-size:var(--b-type-note)}.bancada #btnResetOffset{margin-left:8px;background:transparent;border:0;color:var(--b-orange);font-size:22px;padding:0;width:26px;height:28px}.b-frame-row{display:flex;align-items:flex-start}.bancada .target-wrap{flex:1;display:block;padding:0;margin-right:12px;min-width:0}.bancada #targetFrame{margin:0 auto;background:var(--b-inset);border:1px solid var(--b-line);border-radius:3px;padding:0;min-height:0;min-width:0}.bancada .cross-x,.bancada .cross-y,.bancada .safe-guide{border-color:var(--b-line)}.b-axes{display:flex;width:118px;flex-shrink:0}.b-axis{display:flex;flex-direction:column;align-items:center;width:59px;font-size:var(--b-type-note);color:var(--b-muted)}.b-axis>span{display:block;margin-bottom:5px}.bancada .b-vslider{position:relative;width:32px;height:92px;margin:0 0 8px;flex:none;cursor:ns-resize}.b-vslider .slider-track{position:absolute;left:14px;top:0;width:4px;height:100%;background:var(--b-line)}.b-vslider .slider-fill{position:absolute;left:0;top:0;width:4px;height:50%;background:var(--b-orange)}.b-vslider .slider-thumb{position:absolute;left:16px!important;top:50%;width:14px;height:14px;margin-left:-7px;margin-top:-7px;background:var(--b-orange);border:0;border-radius:7px}.bancada .check-control{min-height:20px;margin:0;cursor:pointer}.bancada .check-control .check-label{font-size:var(--b-type-body);line-height:16px;color:var(--b-fg);font-weight:600}.bancada .check-control .check-visual{display:block;width:13px;height:13px;background:transparent;border:1px solid var(--b-muted);border-radius:2px;margin-right:8px;margin-left:0;flex-shrink:0}.bancada .check-control[aria-checked=true] .check-visual{background:var(--b-orange);border-color:var(--b-orange)}.bancada .check-visual img,.bancada .check-knob{display:none!important}.bancada .tick-control{flex-direction:row-reverse;justify-content:flex-end}.b-axis .check-control .check-visual{margin:0}
+.b-destination{display:flex;align-items:flex-end;flex-wrap:wrap;margin-top:10px}.b-destination>div{margin-right:12px}.b-destination sp-dropdown{width:118px}.b-blur-row{display:flex;align-items:center}.b-preset{width:34px;min-height:28px;padding:4px!important;margin-right:3px;background:var(--b-surface)!important;color:var(--b-fg)!important;border:1px solid var(--b-line)!important}.b-preset.selected{background:var(--b-orange)!important;color:#FEFEEF!important}.b-blur-row sp-textfield{width:48px;margin:0 3px}.b-blur-row>span{font-size:var(--b-type-note);color:var(--b-muted)}
+.b-advanced .fold-toggle{display:flex;justify-content:flex-start;align-items:center;min-height:24px;background:transparent;border:0;color:var(--b-fg);padding:0}.b-experimental{margin-left:8px;font-size:var(--b-type-note);font-weight:400;color:var(--b-muted)}.b-advanced .fold-toggle .chevron{width:10px;height:10px;margin-left:auto}.b-advanced-row{display:block;padding:8px 0;border-bottom:1px solid var(--b-line)}.b-advanced-row:last-child{border:0}.b-advanced-row>.help{margin:2px 0 0 21px}.b-option-name{font-weight:600;font-size:var(--b-type-body)}.b-advanced-row>sp-textfield{width:64px;float:none;display:block;margin-top:5px}.b-advanced-row .rotation-setting{margin-left:21px}.bancada .b-more .section{margin:8px 0 0;background:var(--b-bg);padding:8px 0;border:0;border-radius:0}.bancada .b-more .fold-caption{font-size:var(--b-type-note)}
+.b-footer{position:absolute;left:0;right:0;bottom:0;display:block;padding:9px 14px 10px;background:var(--b-surface);border-top:1px solid var(--b-line)}.b-footer-meta{display:flex;align-items:center;margin-bottom:8px}.b-footer #status{flex:1;min-width:0;color:var(--b-muted);font-size:var(--b-type-note);line-height:15px;margin:0 8px 0 0;max-height:45px;overflow-y:auto}.b-version{font-size:var(--b-type-note);color:var(--b-muted);flex-shrink:0}.bancada #btnApply{display:flex;justify-content:center;align-items:center;min-height:38px;width:100%;font-size:var(--b-type-body);border-radius:4px;margin:0}.bancada #applyEffect{max-height:30px;overflow-y:auto;font-size:var(--b-type-note);line-height:15px;margin:5px 0 0}
+.bancada.narrow .b-heading h2{width:100%;margin:0 0 6px}.bancada.narrow #taskTrack .b-heading h2{width:auto;margin:0}.bancada.narrow .b-heading{position:relative}.bancada.narrow #btnResetOffset{position:absolute;right:0;top:0}.bancada.narrow .b-section{padding-left:12px;padding-right:12px}.bancada.narrow .b-axes{width:108px}.bancada.narrow .b-axis{width:54px}.bancada.low .b-header{height:30px}.bancada.low .take-card{min-height:34px;padding-top:5px;padding-bottom:5px}.bancada.low .take-card>.b-caption{display:none}.bancada.low #status{max-height:30px}.bancada.low #applyEffect{display:none}.bancada.low .b-footer{padding-top:6px;padding-bottom:6px}.bancada.low #btnApply{min-height:32px}
+
+.bancada .check-visual{background-image:none!important}.bancada .file-button:before,.bancada .file-button:after{display:none!important}.bancada .b-header,.bancada .b-footer{background-image:none;border-radius:0;box-shadow:none}.bancada #btnFaceAuto{border-radius:4px}
+
+
+.bancada #btnFaceAuto img,.bancada #btnReadMask img{display:none}.bancada .check-visual{font-size:var(--b-type-note);line-height:12px;text-align:center;color:#FEFEEF}.bancada .safe-guide{border:1px solid var(--b-line)}.bancada .cross-x,.bancada .cross-y{background:var(--b-line)}
+.bancada sp-menu{min-width:168px}.bancada sp-menu-item{white-space:nowrap}
+.b-advanced .fold-toggle>span{flex:none}.b-advanced .fold-toggle .chevron{margin-left:auto}
+.b-blur-row sp-textfield{width:58px}
+.b-advanced-row .rotation-setting[data-inactive=true]{display:none}
+.bancada.low .b-section{padding-top:8px;padding-bottom:8px}.bancada.low .b-advanced-row{padding-top:5px;padding-bottom:5px}
+.bancada .b-advanced-row .check-control{display:flex;width:100%;flex-direction:row;justify-content:space-between}.bancada .b-advanced-row .check-control .check-visual{width:13px;min-width:13px;max-width:13px;height:13px;margin-left:8px;margin-right:0}
+.bancada .b-advanced-row>.help{margin-left:0}.b-advanced-setting{display:flex;align-items:center;justify-content:space-between}.b-advanced-setting>sp-textfield{width:64px;min-height:28px;margin:0 0 0 8px}
+.bancada #bSource{width:180px}
+.bancada .b-blur-row .number-field{width:58px;min-width:58px;max-width:58px;margin:0 3px}.bancada .b-blur-row .number-field sp-textfield{width:100%;margin:0}
+.bancada .b-advanced-setting>.number-field{margin:0 0 0 8px}.b-advanced .fold-toggle .chevron{width:14px;height:14px;opacity:1}
+.bancada.low .b-header{min-height:30px}.bancada.light #targetFrame .safe-guide{border-color:#7b8992}
+
+/* Keep complete footer messages scrollable within two lines, with room for the scrollbar. */
+.b-footer-meta{align-items:flex-start}
+.b-footer #status{max-height:30px;padding-right:12px;white-space:normal;overflow-wrap:break-word;overflow-x:hidden}
+.bancada #applyEffect{display:block;width:100%;max-width:100%;padding-right:12px;white-space:normal;overflow-wrap:break-word;overflow-x:hidden}
+.bancada.low #applyEffect{display:none}
+.bancada #btnChooseProject{background:transparent;color:var(--b-muted);font-size:var(--b-type-note);line-height:16px}
+.bancada #btnChooseProject:hover{background:transparent;color:var(--b-fg)}
+/* The light theme needs a darker orange for small controls; action buttons retain their fill. */
+.bancada.light .b-vslider .slider-fill,.bancada.light .b-vslider .slider-thumb{background:var(--b-accent)}
+.bancada.light #btnResetOffset{color:var(--b-accent)}
+.bancada.light .check-control[aria-checked=true] .check-visual{background:var(--b-accent);border-color:var(--b-accent);color:#FEFEEF}
+.bancada.light .b-preset.selected{border-color:var(--b-accent)!important}
+.bancada.light #targetDot{border:1px solid var(--b-accent);border-radius:50%}
+
+
+/* Host-verified refinement. Full-width bands remain square by design.
+   Rounded controls paint their own surface at explicit integer heights;
+   images receive their own inner radius because parent clipping is unreliable. */
+.bancada h1,.bancada h2,.bancada h3,.bancada .take-name,.bancada .fold-toggle,.bancada .b-option-name,.bancada .check-label,.bancada .state-badge,.bancada #btnApply{font-weight:var(--b-weight-label)}
+.bancada .b-header h1{font-size:var(--b-type-brand);line-height:20px}
+.bancada .b-heading h2{font-size:var(--b-type-section);line-height:18px}
+.bancada .take-name,.bancada .file-title,.bancada .number-display,.bancada .check-label,.bancada .b-option-name,.bancada sp-dropdown,.bancada sp-textfield,.bancada sp-menu-item{font-size:var(--b-type-body);line-height:17px}
+.bancada .help,.bancada .face-state,.bancada .take-chip,.bancada .face-compose-row,.bancada .rotation-setting>sp-label,.bancada .fold-caption,.bancada .state-badge,.bancada .text-button,.bancada .face-actions>.file-button{font-size:var(--b-type-note);line-height:15px}
+.bancada .take-chip{border-radius:0}
+.bancada [role=button]{height:28px;min-height:28px;padding:0 9px;border-radius:var(--b-radius-control);font-weight:var(--b-weight-body)}
+.bancada .file-button,.bancada #btnFaceAuto,.bancada #btnReadMask{height:34px;min-height:34px;padding:0 9px;border-radius:var(--b-radius-control);align-items:center}
+.bancada .file-title{background:transparent;border-radius:var(--b-radius-frame)}
+.bancada .text-button,.bancada #btnProperties,.bancada #btnChooseProject{height:28px;min-height:28px;padding:0}
+.bancada .fold-toggle{height:28px;min-height:28px;padding:0;font-size:var(--b-type-label);font-weight:var(--b-weight-label);line-height:18px;border-radius:0}
+.bancada .b-more .fold-toggle,.bancada .b-compose-fold>.fold-toggle{font-size:var(--b-type-body)}
+.bancada .b-experimental{font-size:var(--b-type-note);font-weight:var(--b-weight-body);line-height:15px}
+.bancada sp-dropdown{height:30px;min-height:30px;border-radius:var(--b-radius-control)}
+.bancada .number-field{height:30px;min-height:30px;border-radius:var(--b-radius-control)}
+.bancada .number-field.editing{height:34px;border-color:var(--b-orange)}
+.bancada .number-field .number-editor{height:32px;border-radius:var(--b-radius-frame)}
+.bancada .number-field .unit{font-size:var(--b-type-note);line-height:15px}
+.bancada .b-preset{height:30px;min-height:30px;padding:0!important}
+.bancada .face-chooser,.bancada .face-details,.bancada .face-compose-box{border-radius:var(--b-radius-panel)}
+.bancada #bFirstFrame,.bancada #targetFrame,.bancada .face-chooser-area{border-radius:var(--b-radius-frame)}
+.bancada #bFirstImage{border-radius:2px}
+.bancada #faceChooserImage{border-radius:var(--b-radius-frame)}
+.bancada .check-control .check-visual{border-radius:var(--b-radius-frame)}
+.bancada .slider-thumb,.bancada .b-vslider .slider-thumb,.bancada #targetDot{border-radius:var(--b-radius-circle)}
+.bancada #btnResetOffset{height:28px;min-height:28px;padding:0;font-size:22px;border-radius:0}
+.bancada #btnRefreshSelection{height:28px;min-height:28px;padding:0;border-radius:0}
+.bancada #btnApply{height:44px;min-height:44px;font-size:var(--b-type-body);font-weight:var(--b-weight-label);border-radius:var(--b-radius-control)}
+.bancada.low #btnApply{height:34px;min-height:34px}
+.bancada #applyEffect,.bancada #status{font-size:var(--b-type-note);line-height:15px}
+
+
+
+/* ============================================================
+   Refinamento visual (30/10/2026).
+   Bloco único e removível: apagar daqui até o fim desfaz tudo.
+   - linhas em px inteiros (nada de 1.4 → 16,8 px);
+   - selo de estado único na faixa do take, por data-tone;
+   - rodapé sem caixas roláveis (nada de texto cortado pela barra);
+   - botões de seção com texto centralizado;
+   - aviso de máscara sem barra lateral, como na referência;
+   - checkbox dos Avançados à esquerda, como na referência;
+   - borda visível nos botões laranja no tema claro.
+   ============================================================ */
+.bancada{line-height:16px}
+.bancada .take-name,.bancada .file-title,.bancada .number-display,.bancada .check-label,.bancada .b-option-name,.bancada sp-dropdown,.bancada sp-textfield,.bancada sp-menu-item{line-height:16px}
+
+/* Faixa do take: nome com prioridade (13/18 600), estado num selo de 20 px */
+.bancada .take-row{display:flex;align-items:center;min-height:28px}
+.bancada .take-name{flex:1;min-width:64px;font-size:var(--b-type-label);line-height:18px;font-weight:var(--b-weight-label)}
+.bancada .take-chip{flex:none;max-width:55%;height:20px;margin-left:8px;padding:0 7px;border:1px solid transparent;border-radius:var(--b-radius-frame);
+  font-size:var(--b-type-note);line-height:18px;font-weight:var(--b-weight-label);color:#FEFEEF;background:rgba(254,254,239,.14);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bancada .take-chip[data-tone=""]{background:transparent}
+.bancada .take-chip[data-tone="ok"]{background:#FEFEEF;border-color:#FEFEEF;color:var(--b-accent)}
+.bancada .take-chip[data-tone="warn"]{background:#f8e5eb;border-color:#f8e5eb;color:#76223a}
+.bancada .take-chip[data-tone="bad"]{background:transparent;border-color:#FEFEEF;color:#FEFEEF}
+.bancada .take-chip[data-tone="info"],.bancada .take-chip[data-tone="run"]{background:rgba(254,254,239,.14);border-color:transparent;color:#FEFEEF}
+
+/* Rodapé: estado em uma linha (texto completo no title); erro e ajuda quebram linha sem rolagem própria */
+.b-footer-meta{align-items:center}
+.b-footer #status{max-height:none;overflow:hidden;padding-right:0;line-height:16px;white-space:nowrap;text-overflow:ellipsis}
+.b-footer #status.error{white-space:normal;overflow:visible}
+.bancada #applyEffect{max-height:none;overflow:visible;padding-right:0;line-height:16px;margin:6px 0 0}
+
+/* Botões de seção: texto centralizado, como o Aplicar */
+.bancada #taskTrack .file-button,.bancada #bReview .file-button{justify-content:center;text-align:center}
+.bancada #taskTrack .file-button .file-title{flex:none;margin:0}
+
+/* Aviso de máscara: texto simples, sem barra lateral */
+.b-warning{padding:0;margin:0 0 8px;border:0;background:transparent;color:var(--b-muted);font-size:var(--b-type-note);line-height:16px}
+
+/* Avançados: checkbox à esquerda do título; título 12/16 500; descrição alinhada ao título */
+.bancada .b-advanced-row .check-control{flex-direction:row-reverse;justify-content:flex-end;align-items:center}
+.bancada .b-advanced-row .check-control .check-visual{width:14px;min-width:14px;max-width:14px;height:14px;margin:0 8px 0 0}
+.bancada .b-advanced-row>.help{margin-left:22px}
+.bancada .b-advanced-row .check-label,.bancada .b-option-name{font-weight:var(--b-weight-medium)}
+.bancada .b-axis .check-control .check-visual{width:14px;height:14px}
+
+/* Tema claro: o laranja some contra o fundo (1,8:1); borda mais escura dá contorno sem trocar a cor */
+
+
+/* Refinamento visual (30/10/2026), segunda passada: diferenças contra a referência vistas no Premiere */
+/* Guias do esquema: linhas cinza contínuas (o tracejado só aparecia em dois lados no UXP) */
+.bancada #targetFrame .safe-action,.bancada #targetFrame .safe-title{border:1px solid var(--b-line)}
+.bancada.light #targetFrame .safe-action,.bancada.light #targetFrame .safe-title{border-color:#7b8992}
+/* Sliders H/V: laranja abaixo da bolinha, como na referência. O ui.js desenha .slider-fill do topo até a
+   bolinha; por isso o trilho vira laranja e o "fill" pinta a parte de cima em cinza. */
+.bancada .b-vslider .slider-track{background:var(--b-orange)}
+.bancada .b-vslider .slider-fill{background:var(--b-line)}
+.bancada.light .b-vslider .slider-track{background:var(--b-accent)}
+.bancada.light .b-vslider .slider-fill{background:var(--b-line)}
+.bancada .b-vslider[aria-disabled=true] .slider-track{background:var(--b-line)}
+/* Avançados: seta à esquerda do título */
+.b-advanced .fold-toggle .chevron{order:-1;margin:0 8px 0 0}
+/* Sem take selecionado: Analisar rosto perde o destaque laranja (continua clicável e orienta o editor) */
+.bancada.no-take #btnFaceAuto{background:var(--b-surface);color:var(--b-muted);border-color:var(--b-line)}
+/* Margem lateral de 16 px, como no board de referência (12 px no painel estreito) */
+.b-section{padding-left:16px;padding-right:16px}
+.bancada .take-card{padding-left:16px;padding-right:16px}
+.b-footer{padding-left:16px;padding-right:16px}
+.bancada.narrow .b-section,.bancada.narrow .take-card,.bancada.narrow .b-footer{padding-left:12px;padding-right:12px}
+/* Ícone de recentralizar desenhado (em vez do caractere ↶), um por tema */
+.bancada #btnResetOffset{font-size:0;display:flex;align-items:center;justify-content:center;width:28px}
+.bancada #btnResetOffset>img.reset-icon{width:16px;height:16px}
+.bancada #btnResetOffset>img.reset-dark{display:block}
+.bancada #btnResetOffset>img.reset-light{display:none}
+.bancada.light #btnResetOffset>img.reset-dark{display:none}
+.bancada.light #btnResetOffset>img.reset-light{display:block}
+/* "Trocar pessoa" como link discreto à direita (como "Escolher pessoa" no board), não como botão largo */
+.bancada #bFace .face-actions{justify-content:flex-end}
+.bancada #btnFacePick{flex:none;width:auto;height:24px;min-height:24px;margin:4px 0 0 auto;padding:0;background:transparent;border:0;color:var(--b-orange);font-size:var(--b-type-note);line-height:16px;font-weight:var(--b-weight-medium)}
+.bancada.light #btnFacePick{color:var(--b-accent)}
+/* Rastrear na ordem do board: frame, link da pessoa à direita, linha de análise, estado do motor */
+.bancada #bFace{display:flex;flex-direction:column}
+.bancada #bFace>#bFirstFrame{order:0}
+.bancada #bFace>#faceChooser{order:1}
+.bancada #bFace>.face-actions{order:2}
+.bancada #bFace>.b-analysis{order:3}
+.bancada #bFace>#faceState{order:4}
+.bancada #btnFacePick{margin:0 0 4px auto}
+/* Conferir sem caixa dentro da seção (sem cartão aninhado) */
+.bancada .face-details{border:0;padding:0;margin:0;background:transparent}
+/* Composição do rosto: sem cartão aninhado; campos com largura que não cobre o "%" */
+.bancada .face-compose-box{margin:8px 0 0;padding:0;border:0;background:transparent}
+.bancada .compose-title{font-size:var(--b-type-body);line-height:16px;font-weight:var(--b-weight-label)}
+.bancada .face-compose-row{margin:8px 0;row-gap:4px}
+.bancada .face-number{width:48px;min-width:48px;max-width:48px;margin:0 8px 0 6px}
+/* Máscara: o estado do trajeto já aparece no selo da faixa; não repetir na seção */
+.bancada .b-result #trajectoryState{display:none}
+/* H/V: valor editável acima de cada slider (o campo nativo recebe o teclado; as setas não chegam ao slider) */
+.bancada .b-axis .number-field{width:44px;min-width:44px;max-width:44px;height:24px;min-height:24px;margin:0 0 6px;padding:0 4px;justify-content:center}
+.bancada .b-axis .number-field .number-display{font-size:var(--b-type-note);line-height:16px;color:var(--b-fg)}
+
+/* ---- Rodada de ajustes (01:44) ---- */
+/* 1) Enquadrar: campo do zoom com a mesma altura e o mesmo fundo do seletor ao lado */
+.b-zoom{align-items:stretch}
+.b-zoom .field{min-height:0;align-items:stretch}
+.bancada .b-zoom .number-field,.bancada .b-zoom .number-field.editing{height:auto;min-height:0;background:transparent;display:flex;align-items:center}
+/* 2) H/V: só leitura da posição, texto discreto como na referência */
+.bancada .b-axis>span{margin-bottom:4px;font-size:var(--b-type-note);line-height:16px;color:var(--b-muted)}
+.bancada .b-axis .b-axis-value{color:var(--b-muted);font-variant-numeric:tabular-nums}
+/* Checkboxes desenhados por imagem nítida (o contorno em CSS sai torto no Premiere) */
+.bancada .check-control .check-visual{width:14px!important;min-width:14px!important;max-width:14px!important;height:14px!important;
+  border:0!important;border-radius:0!important;background-color:transparent!important;
+  background-image:url(icons/check-off-rl.png)!important;background-size:14px 14px;background-repeat:no-repeat;font-size:0!important;color:transparent!important}
+.bancada .check-control[aria-checked=true] .check-visual{background-image:url(icons/check-on-white.svg)!important}
+.bancada.light .check-control .check-visual{background-image:url(icons/check-off-rl-light.png)!important}
+.bancada.light .check-control[aria-checked=true] .check-visual{background-image:url(icons/check-on-dark.svg)!important}
+/* 3) Estado do motor em uma linha (texto completo ao passar o mouse) */
+.bancada #faceState{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:8px 0 0}
+/* 4) Trocar pessoa: escolha no mesmo tamanho do primeiro frame, sem cartão, botões de número compactos */
+.bancada #faceChooser{border:0;padding:0;margin:0 0 8px;background:transparent}
+.bancada #faceChooserArea{width:280px;max-width:100%;margin:4px auto 8px}
+.bancada .face-choice-row{justify-content:center}
+.bancada .face-choice-row>.file-button{flex:none;width:34px;min-width:34px;max-width:34px;height:28px;min-height:28px;padding:0;margin:0 4px 0 0;justify-content:center}
+.bancada #faceChooser .face-actions>.file-button{height:28px;min-height:28px}
+/* 5) Avançados: linhas mais limpas, título regular, checkbox alinhado ao título */
+.bancada .b-advanced-row{padding:10px 0}
+.bancada .b-advanced-row .check-control{align-items:center;min-height:16px}
+.bancada .b-advanced-row .check-label,.bancada .b-option-name{font-weight:var(--b-weight-body);line-height:16px}
+.bancada .b-advanced-row>.help{margin:2px 0 0 22px;line-height:16px}
+/* Correção: regras antigas com "background:" (atalho) zeravam o tamanho da imagem do checkbox */
+.bancada .check-control .check-visual,.bancada .check-control[aria-checked=true] .check-visual,
+.bancada.light .check-control .check-visual,.bancada.light .check-control[aria-checked=true] .check-visual{background-size:14px 14px!important;background-position:0 0!important;background-repeat:no-repeat!important}
+/* Fundo igual ao do Premiere (#1d1d1d) e cinzas na mesma família neutra (antes: azulados) */
+.bancada{--b-bg:#1d1d1d;--b-inset:#151515;--b-surface:#262626;--b-line:#3d3d3d;--b-muted:#b3b3b3;background:#1d1d1d}
+.bancada.light{--b-bg:#edf0f2;--b-inset:#ffffff;--b-surface:#f8f9fa;--b-line:#c4cdd2;--b-muted:#4f5e68;background:#edf0f2}
+/* Arredondamento mais visível e uniforme: 6 px em controles, botões, campos e quadros */
+.bancada,.bancada.light{--b-radius-control:6px;--b-radius-frame:6px}
+.bancada [role=button],.bancada .file-button,.bancada #btnFaceAuto,.bancada #btnReadMask,.bancada #btnApply,.bancada .b-preset,
+.bancada .number-field,.bancada sp-dropdown,.bancada #bFirstFrame,.bancada #targetFrame,.bancada .face-chooser-area{border-radius:6px}
+.bancada #bFirstImage,.bancada #faceChooserImage{border-radius:5px}
+.bancada .take-chip{border-radius:4px}
+.bancada #btnResetOffset,.bancada #btnRefreshSelection,.bancada .text-button,.bancada #btnFacePick,.bancada .fold-toggle{border-radius:0}
+/* No Premiere, overflow:hidden anula o border-radius (comprovado no print: só os elementos com overflow ficaram quadrados).
+   Esses elementos não precisam recortar: o conteúdo já cabe e as imagens têm raio próprio. */
+.bancada #btnApply,.bancada #bFirstFrame,.bancada #targetFrame,.bancada .face-chooser-area{overflow:visible}
+/* Arredondamento final (confirmado em teste no Premiere: 10 px renderiza limpo em todos os casos) */
+.bancada,.bancada.light{--b-radius-control:8px;--b-radius-frame:10px}
+.bancada [role=button],.bancada .file-button,.bancada #btnFaceAuto,.bancada #btnReadMask,.bancada #btnApply,.bancada .b-preset,
+.bancada .number-field,.bancada sp-dropdown{border-radius:8px}
+.bancada #bFirstFrame,.bancada #targetFrame,.bancada .face-chooser-area{border-radius:10px}
+.bancada #bFirstImage,.bancada #faceChooserImage{border-radius:9px}
+.bancada .take-chip{border-radius:6px}
+.bancada .face-choice-row>.file-button{border-radius:8px}
+.bancada #btnResetOffset,.bancada #btnRefreshSelection,.bancada .text-button,.bancada #btnFacePick,.bancada .fold-toggle{border-radius:0}
+/* Seletores nativos (sp-dropdown) desenham a própria borda: raio forçado cortava as pontas. Volta ao desenho nativo. */
+.bancada sp-dropdown{border-radius:0}
+/* Seletores em modo quiet (sem a borda nativa de canto pequeno) com caixa própria de 8 px, igual aos botões */
+.bancada sp-dropdown[quiet]{height:30px;min-height:30px;padding:0 8px;border:1px solid var(--b-line);border-radius:8px;background:var(--b-bg)}
+
+/* ===== Alinhamento geral (02:05): uma altura de controle (32 px), centro vertical em toda linha ===== */
+/* Seletores, campos e botões de seção: mesma altura e mesmo raio */
+.bancada sp-dropdown[quiet]{height:32px;min-height:32px;max-height:32px}
+.bancada .number-field,.bancada .b-zoom .number-field,.bancada .b-zoom .number-field.editing{height:32px;min-height:32px;max-height:32px;display:flex;align-items:center;background:var(--b-bg)}
+.bancada .file-button,.bancada #btnFaceAuto,.bancada #btnReadMask,.bancada #btnFaceNextIssue,.bancada .b-preset,
+.bancada .face-actions>.file-button,.bancada #faceChooser .face-actions>.file-button,.bancada .face-choice-row>.file-button{height:32px!important;min-height:32px!important;max-height:32px;display:flex;align-items:center;justify-content:center}
+.bancada .file-button .file-title{line-height:16px}
+/* Linhas com controles lado a lado: centro vertical e espaço de 8 px */
+.bancada .b-heading{min-height:32px;align-items:center;margin-bottom:8px}
+.b-zoom{align-items:center}
+.b-zoom .field{align-items:center}
+.b-zoom sp-dropdown{margin-right:8px}
+.bancada .number-field{margin:0 8px 0 0}
+.b-analysis{align-items:center}
+.b-analysis sp-dropdown{width:112px;margin-right:8px}
+.b-destination{align-items:flex-end}
+.b-destination>div{margin-right:12px}
+.b-destination .b-caption{margin-bottom:4px;line-height:16px}
+.b-blur-row{align-items:center}
+.b-preset{width:40px;margin-right:4px!important}
+.bancada .b-blur-row .number-field{margin:0 0 0 4px}
+/* Ícone de recentralizar ocupa um quadrado de 32 px, alinhado à direita da seção */
+.bancada #btnResetOffset{width:32px;height:32px;min-height:32px;margin-left:8px}
+/* Esquema encostado à esquerda da coluna (o JS centralizava com margin-left:auto) */
+.bancada #targetFrame{margin-left:0!important;margin-right:auto}
+/* Aplicar: 40 px; no painel baixo, 32 px */
+.bancada #btnApply{height:40px!important;min-height:40px!important}
+.bancada.low #btnApply{height:32px!important;min-height:32px!important}
+/* Faixa do take e rodapé: mesmas margens das seções */
+.bancada .take-card{padding-top:8px;padding-bottom:8px}
+.b-footer{padding-top:8px;padding-bottom:12px}
+.b-footer-meta{margin-bottom:8px}
+
+/* ===== Polish (02:08) ===== */
+/* Linha da análise: o panel.css antigo dava margin-top:6px ao botão (desalinhava 3 px) */
+.bancada #btnFaceAuto{margin:0!important}
+.bancada .b-analysis>*{margin-top:0;margin-bottom:0}
+/* Velocidade como botões segmentados: caixa de 32 px (8 px de raio) com pílulas internas de 26 px */
+.bancada .b-seg{display:flex;flex:none;height:32px;padding:2px;margin:0 8px 0 0;border:1px solid var(--b-line);border-radius:8px;background:var(--b-bg)}
+.bancada .b-seg-item{height:26px;padding:0 10px;display:flex;align-items:center;justify-content:center;border-radius:6px;
+  font-size:var(--b-type-body);line-height:16px;color:var(--b-muted);cursor:pointer;white-space:nowrap}
+.bancada .b-seg-item.selected{background:var(--b-orange);color:#FEFEEF;font-weight:var(--b-weight-medium)}
+.bancada.light .b-seg-item.selected{background:var(--b-accent);color:#FEFEEF}
+.bancada .b-seg.disabled{opacity:.45}
+
+/* Painel estreito: segmentos em linha inteira e Analisar embaixo */
+.bancada.narrow .b-analysis{flex-wrap:wrap}
+.bancada.narrow .b-seg{width:100%;margin:0 0 8px}
+.bancada.narrow .b-seg-item{flex:1}
+.bancada.narrow .b-analysis #btnFaceAuto{flex:1 1 100%}
+/* Sliders H/V como na referência: trilho em pílula de 8 px, bolinha de 16 px */
+.bancada .b-vslider{width:32px}
+.bancada .b-vslider .slider-track{left:12px;width:8px;border-radius:4px}
+.bancada .b-vslider .slider-fill{width:8px;border-radius:4px 4px 0 0}
+.bancada .b-vslider .slider-thumb{left:16px!important;width:16px;height:16px;margin-left:-8px;margin-top:-8px;border-radius:8px}
+.bancada .b-axis>span{margin-bottom:4px}
+/* Foco: sem o contorno solto de 2 px ao clicar; o foco aparece no próprio controle */
+
+
+
+
+/* Bordas inteiras: recuo lateral +1 px (16→17; estreito 12→13) para a borda dos controles não encostar no corte da área rolável */
+.b-section,.bancada .take-card,.b-footer{padding-left:16px;padding-right:16px}
+.bancada.narrow .b-section,.bancada.narrow .take-card,.bancada.narrow .b-footer{padding-left:12px;padding-right:12px}
+/* Seletores: a borda arredondada fica numa caixa externa; o seletor nativo fica 2 px para dentro,
+   porque a área da seta nativa cobria os cantos da direita */
+.bancada .b-dd{flex:none;height:32px;padding:0 3px 0 0;border:1px solid var(--b-line);border-radius:8px;background:var(--b-bg);display:flex;align-items:center}
+.bancada .b-dd>sp-dropdown[quiet]{width:100%!important;height:30px;min-height:30px;max-height:30px;margin:0!important;padding:0 0 0 8px;border:0;border-radius:0;background:transparent}
+.bancada #bSourceBox{width:180px}
+.bancada .b-zoom #bZoomBox{width:112px;margin-right:8px}
+.bancada .b-zoom #bZoomBox>sp-dropdown{margin:0!important}
+.bancada #bDestinationBox{width:124px}
+.bancada.narrow #bSourceBox{width:160px}
+/* Seletores: mesma folga de 8 px dos dois lados (texto à esquerda, seta à direita) */
+.bancada .b-dd{padding:0 8px 0 0}
+/* Seletor desenhado pelo plugin (substitui a aparência do sp-dropdown nativo) */
+.bancada .b-dd{position:relative;padding:0}
+.bancada .b-dd>sp-dropdown.b-dd-native{display:none!important}
+.bancada .b-dd-btn{display:flex;align-items:center;width:100%;height:30px!important;min-height:30px!important;padding:0 10px 0 9px!important;border:0!important;border-radius:7px!important;background:transparent!important;color:var(--b-fg);cursor:pointer;justify-content:space-between!important}
+.bancada .b-dd-text{flex:1;min-width:0;font-size:var(--b-type-body);line-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+.bancada .b-dd-chev{display:block!important;width:12px;height:12px;flex:none;margin-left:8px}
+.bancada .b-dd-chev-light,.bancada.light .b-dd-chev-dark{display:none!important}
+.bancada.light .b-dd-chev-light{display:block!important}
+.bancada .b-dd-btn[aria-disabled=true]{opacity:.45}
+
+.bancada .b-dd-menu{position:absolute;left:-1px;right:-1px;top:34px;z-index:50;padding:4px;border:1px solid var(--b-line);border-radius:8px;background:var(--b-surface)}
+.bancada .b-dd-option{height:28px;padding:0 8px;display:flex;align-items:center;border-radius:6px;font-size:var(--b-type-body);line-height:16px;color:var(--b-fg);cursor:pointer;white-space:nowrap}
+.bancada .b-dd-option:hover{background:var(--b-line)}
+.bancada .b-dd-option.selected{color:var(--b-orange)}
+.bancada.light .b-dd-option.selected{color:var(--b-accent)}
+
+/* Bordas iguais dos dois lados: nada começa em meio pixel (larguras fixas e centralização inteira) */
+.bancada .b-seg-item{width:56px;padding:0;flex:none}
+.bancada.narrow .b-seg-item{width:auto;flex:1}
+.bancada #bFirstFrame{margin-right:0}
+/* "Enquadrar" com largura inteira: o texto tinha largura fracionária e empurrava o seletor e o campo para meio pixel */
+.bancada #taskFrame .b-heading h2{width:84px;flex:none;margin-right:8px;white-space:nowrap}
+.bancada.narrow #taskFrame .b-heading h2{width:100%}
+
+/* ===== Borda pintada (02:28): fora = cor da borda, dentro (.rl-in, 1 px menor) = fundo ===== */
+.bancada [data-rl-paint]{border:0!important;padding:1px!important;background:var(--b-line)!important;overflow:visible}
+.bancada [data-rl-paint]>.rl-in{display:flex;align-items:center;justify-content:center;width:100%;height:100%;border-radius:7px;background:var(--b-surface);color:inherit}
+/* Botões laranja: fora e dentro laranja; desativados e sem take: cinza */
+.bancada #btnFaceAuto[data-rl-paint],.bancada #btnReadMask[data-rl-paint],.bancada #btnFaceNextIssue[data-rl-paint],.bancada #btnApply[data-rl-paint]{background:var(--b-orange)!important}
+.bancada #btnFaceAuto>.rl-in,.bancada #btnReadMask>.rl-in,.bancada #btnFaceNextIssue>.rl-in,.bancada #btnApply>.rl-in{background:var(--b-orange)}
+.bancada [data-rl-paint][aria-disabled=true],.bancada.no-take #btnFaceAuto[data-rl-paint]{background:var(--b-line)!important}
+.bancada [data-rl-paint][aria-disabled=true]>.rl-in,.bancada.no-take #btnFaceAuto>.rl-in{background:var(--b-surface)}
+/* Ângulos: o selecionado fica laranja por inteiro */
+.bancada .b-preset.selected[data-rl-paint]{background:var(--b-orange)!important}
+.bancada .b-preset.selected>.rl-in{background:var(--b-orange);color:#FEFEEF}
+/* Campos e velocidade: fundo do painel por dentro */
+.bancada [data-rl-paint=field]>.rl-in{background:var(--b-bg);justify-content:space-between;padding:0 6px}
+.bancada [data-rl-paint=seg]>.rl-in{background:var(--b-bg);justify-content:flex-start;padding:1px}
+/* Quadros: 10 px fora, 9 px dentro; o conteúdo fica na camada interna */
+.bancada [data-rl-paint=frame]>.rl-in{position:relative;display:flex;border-radius:9px;background:var(--b-inset)}
+.bancada #bFirstImage{border-radius:9px;left:0;top:0;width:100%;height:100%}
+/* Foco e lista aberta: a borda pintada vira laranja */
+
+/* Seletores desenhados: mesma técnica (a caixa é a borda, o botão é o fundo) */
+.bancada .b-dd{border:0!important;padding:1px!important;background:var(--b-line)}
+.bancada .b-dd>.b-dd-btn{background:var(--b-bg)!important;border-radius:7px!important}
+
+
+/* ===== 02:32: borda pintada no restante; velocidade com folga igual; sliders sem ponta laranja ===== */
+/* Botões compactos e da escolha de pessoa: laranja só onde já era; os demais cinza */
+.bancada .face-choice-row>[data-rl-paint]{padding:1px!important}
+.bancada .face-choice-row>[data-rl-paint]>.rl-in{border-radius:7px}
+/* Velocidade: 1 px de folga em volta da pílula laranja, em cima, embaixo e dos lados */
+.bancada [data-rl-paint=seg]>.rl-in{align-items:center;padding:1px}
+.bancada .b-seg-item{height:28px;border-radius:6px}
+/* Sliders: trilho cinza inteiro; o laranja é um elemento próprio abaixo da bolinha (sem franja no topo) */
+.bancada .b-vslider .slider-track{background:var(--b-line)!important}
+.bancada .b-vslider .slider-fill{background:transparent!important}
+.bancada .b-vslider .rl-low{position:absolute;left:0;bottom:0;width:8px;border-radius:0 0 4px 4px;background:var(--b-orange)}
+.bancada.light .b-vslider .rl-low{background:var(--b-accent)}
+.bancada .b-vslider[aria-disabled=true] .rl-low{background:var(--b-line)}
+.bancada .b-vslider[aria-disabled=true] .slider-thumb{background:#5c5c5c}
+.bancada.light .b-vslider[aria-disabled=true] .slider-thumb{background:#a8b0b5}
+/* Painel estreito: velocidade com itens de largura inteira (56 px), sem dividir a linha em frações */
+.bancada.narrow .b-seg{width:auto}
+.bancada.narrow .b-seg-item{width:56px;flex:none}
+
+/* ===== 02:40: raio proporcional ao tamanho de cada coisa =====
+   Regra: raio externo ~1/4 da altura; camada interna = externo menos a distância até ela.
+   Quadros grandes 10 (dentro 9) · Aplicar 40 px: 10 (9) · controles de 32 px: 8 (7)
+   botões quase quadrados (ângulos, números da pessoa): 6 (5) · pílula da velocidade: 6 (8-2)
+   lista aberta 8, itens 4 (8-1-3) · etiqueta do take (20 px): 4 · cartões de painel: 10 */
+.bancada #btnApply[data-rl-paint]{border-radius:10px}
+.bancada #btnApply>.rl-in{border-radius:9px}
+.bancada .b-preset[data-rl-paint],.bancada .face-choice-row>[data-rl-paint]{border-radius:6px!important}
+.bancada .b-preset>.rl-in,.bancada .face-choice-row>[data-rl-paint]>.rl-in{border-radius:5px}
+.bancada .take-chip{border-radius:4px}
+.bancada .face-chooser,.bancada .face-details,.bancada .face-compose-box{border-radius:10px}
+/* Lista aberta com borda pintada (a borda de 1 px real era cortada à direita e embaixo) */
+.bancada .b-dd-menu{border:0;padding:1px;background:var(--b-line)}
+.bancada .b-dd-list{padding:3px;border-radius:7px;background:var(--b-surface)}
+.bancada .b-dd-option{border-radius:4px}
+/* "Trocar pessoa" é link de texto: sem caixa */
+.bancada #btnFacePick{background:transparent!important;padding:0!important}
+/* Sliders de rotação: bolinha da paleta, sem o contorno azul herdado */
+.bancada .rotation-row .slider-thumb{border:0;background:var(--b-orange)}
+.bancada .rotation-row .slider-track{background:var(--b-line)}
+.bancada .rotation-row .slider-fill{background:var(--b-orange)}
+.bancada.light .rotation-row .slider-fill,.bancada.light .rotation-row .slider-thumb{background:var(--b-accent)}
+
+/* ===== 02:45: ângulos como controle segmentado; número encostado na unidade ===== */
+.bancada .b-shutter-seg{margin:0}
+.bancada .b-shutter-seg .b-preset{width:44px;height:28px;min-height:28px;margin:0!important;padding:0!important;border:0!important;border-radius:6px!important;background:transparent!important;color:var(--b-muted)!important;display:flex;align-items:center;justify-content:center}
+.bancada .b-shutter-seg .b-preset.selected{background:var(--b-orange)!important;color:#FEFEEF!important;font-weight:var(--b-weight-medium)}
+.bancada.light .b-shutter-seg .b-preset.selected{background:var(--b-accent)!important;color:#FEFEEF!important}
+.bancada.narrow .b-shutter-seg .b-preset{width:44px;flex:none}
+.bancada .b-blur-row .number-field{margin:0 0 0 8px}
+.bancada .number-field .number-display{text-align:right}
+.bancada .number-field .unit{margin-left:3px}
+.bancada [data-rl-paint=field]>.rl-in{padding:0 8px}
+/* Botões laranja desativados: a regra laranja usa o ID e vencia a de desativado (texto cinza sobre laranja).
+   Agora, desativado = caixa cinza com texto legível, com a mesma força de seletor. */
+.bancada #btnApply[data-rl-paint][aria-disabled=true],.bancada #btnFaceAuto[data-rl-paint][aria-disabled=true],
+.bancada #btnReadMask[data-rl-paint][aria-disabled=true],.bancada #btnFaceNextIssue[data-rl-paint][aria-disabled=true]{background:var(--b-line)!important;opacity:1}
+.bancada #btnApply[aria-disabled=true]>.rl-in,.bancada #btnFaceAuto[aria-disabled=true]>.rl-in,
+.bancada #btnReadMask[aria-disabled=true]>.rl-in,.bancada #btnFaceNextIssue[aria-disabled=true]>.rl-in{background:var(--b-surface);color:var(--b-muted)}
+.bancada #btnApply[aria-disabled=true],.bancada #btnApply[aria-disabled=true] #applyLabel{color:var(--b-muted)!important}
+.bancada.light #btnFaceAuto[data-rl-paint][aria-disabled=true],.bancada.light #btnApply[data-rl-paint][aria-disabled=true]{background:var(--b-line)!important}
+.bancada .b-shutter-seg .b-preset{height:28px!important;min-height:28px!important;max-height:28px}
+.bancada.narrow .b-shutter-seg{margin:0}
+/* ===== 02:50: segmentados com 2 px de folga (em 100% de escala, 1 px some na diagonal do canto) =====
+   Caixa 8 · camada interna 7 · folga 2 · pílula 5 (curvas concêntricas, folga igual nos cantos) */
+.bancada [data-rl-paint=seg]>.rl-in{padding:2px}
+.bancada .b-seg-item,.bancada .b-shutter-seg .b-preset{height:26px!important;min-height:26px!important;max-height:26px;border-radius:5px!important}
+/* ===== 02:52: Analisar com a mesma moldura da velocidade (opção 3 escolhida no teste) =====
+   Caixa cinza 32 px (raio 8) · fundo 7 · folga 2 · laranja 26 px (raio 5): os dois laranjas da linha ficam iguais */
+.bancada #btnFaceAuto[data-rl-paint],.bancada.light #btnFaceAuto[data-rl-paint]{background:var(--b-line)!important}
+.bancada #btnFaceAuto>.rl-in,.bancada #btnFaceAuto[aria-disabled=true]>.rl-in,.bancada.no-take #btnFaceAuto>.rl-in{padding:2px;border-radius:7px;background:var(--b-bg)}
+.bancada #btnFaceAuto>.rl-in>.file-title{display:flex;align-items:center;justify-content:center;width:100%;height:26px;margin:0;border-radius:5px;background:var(--b-orange);color:#FEFEEF}
+.bancada.light #btnFaceAuto>.rl-in>.file-title{background:var(--b-accent);color:#FEFEEF}
+.bancada #btnFaceAuto[aria-disabled=true]>.rl-in>.file-title,.bancada.no-take #btnFaceAuto>.rl-in>.file-title{background:var(--b-surface);color:var(--b-muted)}
+
+
+/* ===== 03:00: verificação completa ===== */
+/* Botões de ação do rosto: bordas alinhadas às da seção (16 px) e 8 px entre eles e até o próximo bloco */
+.bancada .face-actions{display:flex;align-items:center;margin:8px -4px 0!important;padding:0!important;min-height:0;height:auto}
+.bancada .face-actions>.file-button{flex:1;min-width:0;margin:0 4px!important}
+.bancada #bFace>.face-actions{margin:0 -4px!important}
+.bancada #bFace>.face-actions>.file-button{margin:0 4px 8px!important}
+.bancada .face-actions>#btnFacePick{flex:none;margin:0 4px 8px auto!important}
+/* Máscara: o botão já diz que salva o projeto; o aviso repetido sai */
+.bancada #bMask>.b-warning{display:none}
+/* Botões principais com a moldura do Analisar: caixa cinza, folga 2, laranja por dentro */
+.bancada #btnReadMask[data-rl-paint],.bancada #btnApply[data-rl-paint],.bancada.light #btnApply[data-rl-paint]{background:var(--b-line)!important}
+.bancada #btnReadMask>.rl-in,.bancada #btnReadMask[aria-disabled=true]>.rl-in{padding:2px;border-radius:7px;background:var(--b-bg)}
+.bancada #btnApply>.rl-in,.bancada #btnApply[aria-disabled=true]>.rl-in{padding:2px;border-radius:9px;background:var(--b-bg)}
+.bancada #btnReadMask>.rl-in>.file-title{display:flex;align-items:center;justify-content:center;width:100%;height:26px;margin:0;border-radius:5px;background:var(--b-orange);color:#FEFEEF}
+.bancada #btnApply>.rl-in>#applyLabel{display:flex;align-items:center;justify-content:center;width:100%;height:34px;margin:0;border-radius:7px;background:var(--b-orange);color:#FEFEEF!important}
+.bancada.light #btnReadMask>.rl-in>.file-title,.bancada.light #btnApply>.rl-in>#applyLabel{background:var(--b-accent);color:#FEFEEF!important}
+.bancada #btnReadMask[aria-disabled=true]>.rl-in>.file-title,.bancada #btnApply[aria-disabled=true]>.rl-in>#applyLabel{background:var(--b-surface);color:var(--b-muted)!important}
+
+.bancada .b-axes{width:120px}.bancada .b-axis{width:60px}
+/* Avançados: uma coluna de texto só (22 px depois da caixa de marcar ou da seta) */
+.bancada .b-advanced-setting>.b-option-name{margin-left:22px}
+.bancada .b-compose-fold>.fold-caption,.bancada .b-more .fold-caption{margin-left:22px}
+/* O laranja interno acompanha a altura do botão (painel baixo encurta o Aplicar) */
+.bancada #btnFaceAuto>.rl-in>.file-title,.bancada #btnReadMask>.rl-in>.file-title,.bancada #btnApply>.rl-in>#applyLabel{height:100%}
+/* Faixa do take: o botão de atualizar não mostra ícone no Premiere e deixava 24 px vazios à direita da etiqueta.
+   A seleção já é acompanhada sozinha; a etiqueta passa a encostar na margem de 16 px como o resto. */
+.bancada #btnRefreshSelection{display:none!important}
+
+/* ===== 03:10: paleta nova — var(--b-accent) (faixa), var(--b-accent) (destaque), #FEFEEF (texto), #212121 (fundo) =====
+   --b-orange continua sendo o nome da cor de destaque (agora verde-petróleo) para não mexer em todas as regras. */
+.bancada{--b-bg:#212121;--b-inset:#1a1a1a;--b-surface:#2a2a2a;--b-line:#3d3d3d;--b-fg:#FEFEEF;--b-muted:#b9b9ad;--b-accent:#fff;--b-accent-ink:#212121;--b-orange:var(--b-accent);--b-band:#2a2a2a;--b-accent-text:var(--b-accent);background:#212121;color:var(--b-fg)}
+.bancada.light{--b-bg:#FEFEEF;--b-inset:#ffffff;--b-surface:#f5f5e6;--b-line:#cfcfbf;--b-fg:#212121;--b-muted:#55554d;--b-accent:#263238;--b-accent-ink:#fff;--b-orange:var(--b-accent);--b-band:#e5e9ec;--b-accent-text:var(--b-accent);background:#FEFEEF}
+/* Faixa do take: petróleo escuro, texto creme */
+.bancada .take-card,.bancada.light .take-card{background:var(--b-band)}
+.bancada .take-card .take-name,.bancada .take-card>.b-caption{color:var(--b-fg)}
+.bancada .take-card>.b-caption{color:var(--b-muted)}
+.bancada .take-chip[data-tone="ok"]{background:var(--b-accent);border-color:var(--b-accent);color:var(--b-accent-ink)}
+.bancada .take-chip[data-tone="warn"]{background:transparent;border-color:#b68a2f;color:var(--b-fg)}
+.bancada .take-chip[data-tone="bad"]{background:transparent;border-color:var(--b-line);color:var(--b-fg)}
+.bancada .take-chip[data-tone=""]{background:rgba(254,254,239,.14);color:var(--b-fg)}
+/* Texto de destaque sobre fundo escuro (o verde puro não tem contraste para texto) */
+.bancada #btnFacePick,.bancada .text-button{color:var(--b-accent-text)}
+/* Lista aberta: item escolhido com fundo verde */
+.bancada .b-dd-option.selected,.bancada.light .b-dd-option.selected{background:var(--b-accent);color:var(--b-accent-ink)}
+/* Sliders: trilho cinza, parte de baixo verde, bolinha creme (bem visível) */
+.bancada .b-vslider .slider-thumb,.bancada .rotation-row .slider-thumb{background:var(--b-accent)}
+.bancada .b-vslider .rl-low,.bancada .rotation-row .slider-fill{background:var(--b-accent)}
+/* Marcador do enquadramento */
+.bancada #targetDot,.bancada.light #targetDot{border:0}
+.bancada #targetDot>img.tm-dark{display:block}.bancada #targetDot>img.tm-light{display:none}
+.bancada.light #targetDot>img.tm-dark{display:none}.bancada.light #targetDot>img.tm-light{display:block}
+
+/* Metadados redundantes da máscara permanecem internos ao painel. */
+.bancada .b-result #maskInfo,.bancada #btnProperties{display:none}
+
+/* Avisos de análise ocupam no máximo duas linhas no rodapé. */
+.b-footer #status.error{max-height:32px;overflow-y:auto;overflow-x:hidden}
+
+/* Face composition: illustrative guide, isolated from framing controls. */
+.bancada .compose-visual{position:relative;height:144px;max-width:320px;width:100%;margin:12px auto;background:#191919;border:1px solid #454545;border-radius:6px;overflow:hidden}
+.bancada .compose-head{position:absolute;left:50%;width:30px;height:32px;margin-left:-15px;border:2px solid var(--b-accent);border-radius:45%;background:var(--b-accent)}
+.bancada .compose-eyes{position:absolute;left:22%;right:22%;top:45%;height:2px;background:var(--b-accent)}
+.bancada .compose-margin{position:absolute;left:50%;top:0;width:1px;border-left:1px dashed var(--b-accent)}
+.bancada .compose-legend{position:absolute;bottom:6px;left:8px;font-size:10px;color:#a9a9a9}
+.bancada .compose-fields{display:flex;flex-wrap:wrap;margin:4px 0 12px}
+.bancada .compose-field{flex:1;min-width:130px;margin:4px 8px 4px 0}
+.bancada .compose-field label{display:block;font-size:12px;margin-bottom:5px}
+.bancada .compose-value{display:flex;align-items:center;font-size:11px;color:#b7b7b7}
+.bancada .compose-value .face-number{width:64px;min-width:64px;margin-right:8px}
+.bancada .compose-choices{display:flex;flex-wrap:wrap}
+.bancada .compose-choices .file-button{flex:1;min-width:185px;display:flex;flex-direction:column;align-items:flex-start;height:auto;min-height:58px;padding:10px 12px;margin:0 6px 6px 0;white-space:normal;text-align:left}
+.bancada .compose-choice-help{font-size:11px;color:#b7b7b7;margin-top:4px;line-height:15px}
+.bancada .compose-note{margin:4px 0 10px}
+.bancada #composeInfoToggle{font-size:11px;text-align:left;white-space:normal}
+.bancada #composeInfoBody .face-state{margin-top:8px;line-height:16px}
+.bancada.light .compose-visual{background:#e5e5e5;border-color:#aaa}
+.bancada.light .compose-choice-help,.bancada.light .compose-value,.bancada.light .compose-legend{color:#555}
+
+/* 1.5.10: identidade e versão no cabeçalho. */
+.bancada .b-header,.bancada.low .b-header{height:72px;min-height:72px;flex-direction:column;justify-content:center;padding:6px 12px}
+.bancada .b-header h1{line-height:20px}
+.bancada .b-author,.bancada .b-header-version{display:block;font-size:11px;line-height:16px;color:var(--b-muted);text-align:center}
+.bancada .take-card>.b-caption{color:#FEFEEF}
+
+/* 1.5.10: destaques uniformes e interface simplificada. */
+.bancada .b-compose-fold,.bancada #applyEffect{display:none!important}
+.bancada .check-control[aria-checked=true] .check-visual,.bancada.light .check-control[aria-checked=true] .check-visual{background-image:url(icons/check-on-white.svg)!important}
+
+/* 1.5.10: marca à esquerda e versões à direita. */
+.bancada .b-header,.bancada.low .b-header{height:68px;min-height:68px;display:flex;flex-direction:row;justify-content:space-between;align-items:center;padding:8px 16px}
+.bancada .b-brand{flex-shrink:0;margin-right:8px}
+.bancada .b-header h1{font-size:26px;line-height:30px;font-weight:700;text-align:left}
+.bancada .b-author{display:block;font-size:11px;line-height:16px;color:var(--b-muted);text-align:left}
+.bancada .b-author-handle{color:var(--b-accent)}
+.bancada .b-seg-item.selected,.bancada .b-shutter-seg .b-preset.selected,.bancada #btnFaceAuto>.rl-in>.file-title,.bancada #btnReadMask>.rl-in>.file-title,.bancada #btnApply>.rl-in>#applyLabel,.bancada .b-dd-option.selected{color:var(--b-accent-ink)!important}
+
+.bancada .b-preset.selected{border-color:var(--b-accent)!important}
+.bancada .b-vslider .slider-track{background:var(--b-line)}
+.bancada .b-vslider[aria-disabled=true] .slider-fill{background:var(--b-line)}
+.bancada .advanced-refresh-help{padding:6px 8px;margin:8px 0;background:var(--b-surface);border-left:2px solid var(--b-accent);border-radius:3px;color:var(--b-fg)}
+.bancada .b-footer .status-line.error{font-weight:600;border-left:2px solid var(--b-accent);padding-left:6px;color:var(--b-fg)}
+.bancada .take-card{background:var(--b-band)}
+.bancada.light .take-card .take-name,.bancada.light .take-card>.b-caption{color:var(--b-fg)}
+.bancada.light .take-chip[data-tone="warn"]{color:var(--b-fg)}
+.bancada.light .b-seg-item.selected,.bancada.light .b-shutter-seg .b-preset.selected,.bancada.light #btnFaceAuto>.rl-in>.file-title,.bancada.light #btnReadMask>.rl-in>.file-title,.bancada.light #btnApply>.rl-in>#applyLabel{color:var(--b-accent-ink)!important}
+.bancada #btnFaceAuto[aria-disabled=true]>.rl-in>.file-title,.bancada #btnReadMask[aria-disabled=true]>.rl-in>.file-title,.bancada #btnApply[aria-disabled=true]>.rl-in>#applyLabel,.bancada.no-take #btnFaceAuto>.rl-in>.file-title{background:var(--b-surface)!important;color:var(--b-muted)!important}
+.bancada #btnFaceAuto[aria-disabled=true],.bancada #btnReadMask[aria-disabled=true],.bancada #btnApply[aria-disabled=true],.bancada.no-take #btnFaceAuto{opacity:1}
+.bancada.light #btnFaceAuto[aria-disabled=true]>.rl-in>.file-title,.bancada.light #btnReadMask[aria-disabled=true]>.rl-in>.file-title,.bancada.light #btnApply[aria-disabled=true]>.rl-in>#applyLabel,.bancada.light.no-take #btnFaceAuto>.rl-in>.file-title{background:var(--b-surface)!important;color:var(--b-muted)!important}
+.bancada.light .check-control[aria-checked=true] .check-visual{background-image:url(icons/check-on-dark.svg)!important}
+.bancada:not(.light) .check-control[aria-checked=true] .check-visual{background-image:url(icons/check-on-white.svg)!important}
+.bancada .b-author-handle{color:var(--b-accent)}
+.bancada .b-header-version{font-size:11px;line-height:16px;text-align:right;color:var(--b-fg)}
+.bancada .b-engine-version{color:var(--b-muted)}
+.bancada.narrow .b-header{padding-left:12px;padding-right:12px}
+.bancada.narrow .b-header h1{font-size:22px;line-height:27px}
+.bancada.narrow .b-author,.bancada.narrow .b-header-version{font-size:10px}
+
+/* Guías de enquadramento simples, sem imagem de fundo. */
+/* Place the center of each 1 px guide on the midpoint of the image. */
+.bancada #targetFrame .cross-x{top:50%;margin-top:-0.5px}
+.bancada #targetFrame .cross-y{left:50%;margin-left:-0.5px}
+.bancada.light .take-chip[data-tone="info"],.bancada.light .take-chip[data-tone="run"]{background:transparent;border-color:var(--b-line);color:var(--b-fg)}
+.bancada.light .take-chip[data-tone="bad"]{background:transparent;border-color:var(--b-fg);color:var(--b-fg)}
+.bancada .selected-tool[role="button"],.bancada .selected-tool[data-rl-paint]{background:var(--b-accent)!important;color:var(--b-accent-ink);border-color:var(--b-accent)}
+.bancada .selected-tool>.rl-in{background:var(--b-accent);color:var(--b-accent-ink)}
+.bancada #bodyQuality h3,.bancada.light #bodyQuality h3{color:var(--b-fg)}
+
+.b-footer #status{max-height:48px;overflow:hidden;white-space:normal;text-overflow:clip;overflow-wrap:break-word;line-height:16px;padding-right:0}
+.bancada #faceState{white-space:normal;overflow-wrap:break-word;overflow:visible;max-height:none}
+
+/* B04: modo de velocidade que o motor não oferece */
+.bancada .b-seg-item.unavailable{opacity:.45;cursor:default}
+
+/* B09: área clicável mínima de 24×24 nas travas e na chave de tremor */
+.bancada #useX,.bancada #useY,.bancada #tremorFilter{min-width:24px;min-height:24px}
+/* B12: em painel largo o enquadramento fica centrado e os eixos junto dele */
+.bancada .target-wrap{max-width:560px;margin-left:auto;margin-right:auto}
