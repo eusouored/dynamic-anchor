@@ -21,7 +21,7 @@ function initializeTools({$,engine,workflow,repository,run,status,log,refreshCon
   qualityUI();
   function dispose(){if(disposed)return;disposed=true;facePanel.dispose();for(const [target,type,handler]of listeners)try{target.removeEventListener(type,handler);}catch(_){}listeners.length=0;}
   return {selectionChanged:(selected,extra)=>{if(!disposed)facePanel.onSelection(selected,extra);},framingChanged:()=>{if(!disposed)facePanel.framingChanged();},cardState:(selected,base)=>disposed?null:facePanel.cardState(selected,base),currentSelection:()=>facePanel.currentSelection(),dispose,
-    getQuality:()=>({...quality}),setQuality(value){if(disposed)return;quality=Q.options(value);qualityUI();},syncAvailability,invalidateResults,
+    speedMismatch:d=>disposed||typeof facePanel.speedMismatch!=='function'?null:facePanel.speedMismatch(d),reanalyze:()=>disposed?false:facePanel.reanalyze(),speedLabel:()=>facePanel.speedLabel(),getQuality:()=>({...quality}),setQuality(value){if(disposed)return;quality=Q.options(value);qualityUI();},syncAvailability,invalidateResults,
     setContext(data){if(disposed)return;if(data!==context){context=data;invalidateResults();}}};
 }
 module.exports={initializeTools};

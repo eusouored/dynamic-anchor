@@ -196,13 +196,13 @@ function smoothTrack(frames, opt = {}) {
   frames=motionRows(frames);
   // Trechos recuperados trazem a identidade de cada segmento. A média móvel
   // não pode antecipar um reencontro nem misturar o rosto com quadros mantidos.
-  const average = () => {
+  const average = (input = frames) => {
     // A trajetória já vem preenchida (pontes incluídas) e é suavizada como uma série só: separar por
     // segmento criava trancos de 100 a 300 px na retomada. Só quadros mantidos (held) ficam de fora,
     // para a média não misturar o rosto com um valor repetido.
-    if (!frames.some(f => f.held === true)) return smooth(frames, opt.smoothWin);
+    if (!input.some(f => f.held === true)) return smooth(input, opt.smoothWin);
     const out=[];let a=0;
-    for(let b=1;b<=frames.length;b++)if(b===frames.length||(frames[b].held===true)!==(frames[a].held===true)){for(const row of smooth(frames.slice(a,b),opt.smoothWin))out.push(row);a=b;}
+    for(let b=1;b<=input.length;b++)if(b===input.length||(input[b].held===true)!==(input[a].held===true)){for(const row of smooth(input.slice(a,b),opt.smoothWin))out.push(row);a=b;}
     return out;
   };
   const hold = out => {
@@ -212,8 +212,11 @@ function smoothTrack(frames, opt = {}) {
     return out;
   };
   if (!opt.tremor) return hold(average());
-  const pos = tremorFilter(frames, opt.tremor), ang = average();
-  return hold(pos.map((f, i) => ({ ...f, angle: ang[i].angle })));
+  // Reduzir tremor e Suavização somam: o tremor sai primeiro e a Suavização (se > 0) age sobre o resultado.
+  // Antes a Suavização era ignorada com o tremor ligado e o campo ficava desativado sem aviso.
+  const filtered = tremorFilter(frames, opt.tremor), ang = average();
+  const pos = Number(opt.smoothWin) > 1 ? average(filtered.map((f, i) => ({ ...frames[i], x: f.x, y: f.y }))) : filtered;
+  return hold(pos.map((f, i) => ({ ...filtered[i], x: f.x, y: f.y, angle: ang[i].angle })));
 }
 
 // Escala mínima (constante) para o quadro transformado cobrir todo o quadro de saída (sem áreas pretas).

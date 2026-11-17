@@ -9,14 +9,25 @@ function createNativeLinearTemplate({ppro,uxp}){
     if(cached){try{if(await cached.param.isTimeVarying())return cached;}catch(_){}cached=null;}
     const fs=uxp.storage.localFileSystem,plugin=await fs.getPluginFolder(),data=await fs.getDataFolder();
     const manifest=JSON.parse(await(await plugin.getEntry('assets/linear-dual/template-info.json')).read());
-    let folder;try{folder=await data.getEntry('linear-keyframe-template-v4');}catch(_){folder=await data.createFolder('linear-keyframe-template-v4');}
+    // O modelo do pacote é conferido pelo resumo; a cópia na pasta de dados é só um cache dele.
+    // O Premiere pode regravar um projeto que abre (conversão/salvamento automático): uma cópia que
+    // não confere é refeita a partir do original conferido, numa pasta nova (a antiga pode estar aberta).
+    const sources={};
     for(const name of ['reference.png','Anchor-linear-template.prproj']){
-      const source=await plugin.getEntry('assets/linear-dual/'+name),binary=await source.read({format:uxp.storage.formats.binary});
-      if(I.digest(Array.from(new Uint8Array(binary)))!==manifest.files[name])throw Error('O modelo Linear está alterado. Nada foi aplicado.');
-      let existing=null;try{existing=await folder.getEntry(name);}catch(_){}
-      if(existing){const bytes=await existing.read({format:uxp.storage.formats.binary});if(I.digest(Array.from(new Uint8Array(bytes)))!==manifest.files[name])throw Error('O modelo Linear interno mudou. Nada foi aplicado.');}
-      else await(await folder.createFile(name,{overwrite:false})).write(binary,{format:uxp.storage.formats.binary});
+      const binary=await(await plugin.getEntry('assets/linear-dual/'+name)).read({format:uxp.storage.formats.binary});
+      if(I.digest(Array.from(new Uint8Array(binary)))!==manifest.files[name])throw Error('O modelo Linear do pacote está alterado. Reinstale o Dynamic Anchor. Nada foi aplicado.');
+      sources[name]=binary;
     }
+    const base='linear-template-'+manifest.files['Anchor-linear-template.prproj'].slice(0,12);
+    const matches=async folder=>{for(const name of Object.keys(sources)){let entry=null;try{entry=await folder.getEntry(name);}catch(_){return false;}
+      const bytes=await entry.read({format:uxp.storage.formats.binary});if(I.digest(Array.from(new Uint8Array(bytes)))!==manifest.files[name])return false;}return true;};
+    const fresh=async folderName=>{const created=await data.createFolder(folderName);
+      for(const [name,binary] of Object.entries(sources))await(await created.createFile(name,{overwrite:true})).write(binary,{format:uxp.storage.formats.binary});return created;};
+    let folder=null;
+    const candidates=(await data.getEntries()).filter(e=>e&&e.isFolder!==false&&typeof e.name==='string'&&(e.name===base||e.name.startsWith(base+'-'))).sort((a,b)=>a.name.length-b.name.length);
+    for(const candidate of candidates){try{if(await matches(candidate)){folder=candidate;break;}}catch(_){}}
+    if(!folder){try{folder=await fresh(base);}catch(_){folder=await fresh(base+'-'+Date.now().toString(36));}}
+    if(!await matches(folder))throw Error('Não foi possível preparar o modelo Linear na pasta do plugin. Nada foi aplicado.');
     const path=(await folder.getEntry('Anchor-linear-template.prproj')).nativePath;
     const previous=await ppro.Project.getActiveProject();if(!previous)throw Error('Abra o projeto antes de aplicar.');
     const previousPath=previous.path,previousSequence=await previous.getActiveSequence();

@@ -701,12 +701,24 @@ function initializeFacePanel({$,engine,workflow,repository=null,run,status,log,d
   for(const id of ['modeAuto','modeFixed','modeNone','btnResetOffset','btnResetZoom'])try{listen($(id),'click',scheduleDetails);}catch(_){}
   (async()=>{if(disposed)return;try{const p=repository&&await repository.read('face-composition-prefs');if(disposed)return;if(p&&p.payload){$('faceSize').value=String(p.payload.size);$('faceHeadroom').value=String(p.payload.room);}}catch(_){}})();
   for(const [name,m] of Object.entries(SAMPLING))try{listen($(m.id),'click',()=>{if(disposed||$(m.id).disabled||running)return;samplingTouched=true;sampling=name;showSampling();
+        (async()=>{try{const sel=current;if(!sel)return;const d=await workflow.load(sel);const msg=speedMismatch(d&&d.masks&&d.masks[0]);if(msg&&!disposed)status(msg);}catch(_){}})();
     (async()=>{try{if(repository)await repository.write(SAMPLING_KEY,{mode:name});}catch(_){}await record('velocidade da próxima análise: '+m.label+' ('+(m.step===1?'todos os quadros':'1 de cada '+m.step)+')');})();});}catch(_){}
   showSampling();
   samplingLoaded=(async()=>{if(disposed)return;try{const p=repository&&await repository.read(SAMPLING_KEY);if(disposed)return;if(!samplingTouched&&p&&p.payload&&Object.hasOwn(SAMPLING,p.payload.mode))sampling=p.payload.mode;}catch(_){}if(!disposed)showSampling();})();
   (async()=>{try{if(repository)await repository.write(AUTO_KEY,{on:false});}catch(_){}updateAutoText();})();
   if(probeOnStart)require('./startup.js').gate.onActive(()=>probe());
   function dispose(){if(disposed)return;disposed=true;if(running)cancelled=true;if(detailsTimer!==null){clearTimeout(detailsTimer);detailsTimer=null;}for(const [target,type,handler,options]of listeners)try{target.removeEventListener(type,handler,options);}catch(_){}listeners.length=0;pendingChoice=null;}
-  return {sync,probe,onSelection,refreshDetails,framingChanged:scheduleDetails,updateAutoText,cardState,currentSelection:()=>current,dispose,get disposed(){return disposed;},get running(){return running;}};
+  // Velocidade escolhida diferente da usada no trajeto carregado: aplicar daria o resultado antigo.
+  function speedMismatch(d){
+    if(!d||d.type!=='external-face')return null;
+    const ref=d.trackingReference,step=ref&&ref.sampling&&Number.isInteger(ref.sampling.step)?ref.sampling.step:1,wanted=SAMPLING[sampling].step;
+    if(step===wanted)return null;
+    const label=s=>(Object.values(SAMPLING).find(m=>m.step===s)||{label:'passo '+s}).label;
+    return 'Trajeto atual em '+label(step)+'. Ao aplicar, a análise é refeita em '+label(wanted)+' com a mesma pessoa.';
+  }
+  // Nova análise do take atual com a pessoa já escolhida (o alvo salvo é reaproveitado; não pergunta de novo).
+  async function reanalyze(){if(disposed||running)return false;await analyzeAndCapture(false);return !disposed;}
+  function speedLabel(){return SAMPLING[sampling].label;}
+  return {speedMismatch,reanalyze,speedLabel,sync,probe,onSelection,refreshDetails,framingChanged:scheduleDetails,updateAutoText,cardState,currentSelection:()=>current,dispose,get disposed(){return disposed;},get running(){return running;}};
 }
 module.exports={initializeFacePanel};

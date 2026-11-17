@@ -4,7 +4,7 @@ const {chromium}=require(process.env.PLAYWRIGHT||'playwright');
 const root=process.env.ANCHOR_TEST_ROOT?path.resolve(process.env.ANCHOR_TEST_ROOT):path.resolve(__dirname,'../plugin');
 const stage=process.env.ANCHOR_TEST_ROOT||process.env.ANCHOR_BASELINE?root:path.join(__dirname,'stage');
 async function launch(){return chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe'});}
-async function open(browser,{width=390,height=760,theme='dark',status='offline',selection='none',format={width:1920,height:1080,pixelAspect:1},trajectory=false,cssDelay=0,activate=true,realMotor=false,take=null,media=null,motorPort=47833,dpr=1}={}){
+async function open(browser,{width=390,height=760,theme='dark',status='offline',selection='none',format={width:1920,height:1080,pixelAspect:1},trajectory=false,cssDelay=0,activate=true,realMotor=false,take=null,media=null,motorPort=47833,dpr=1,dataType='external-face'}={}){
  const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:dpr}),errors=[];page.on('pageerror',e=>errors.push(e.message));
  const sources={};for(const file of fs.readdirSync(root).filter(n=>n.endsWith('.js')))sources[file]=fs.readFileSync(path.join(fs.existsSync(path.join(stage,file))?stage:root,file),'utf8');
  await page.route('http://anchor.test/**',async route=>{
@@ -24,7 +24,7 @@ async function open(browser,{width=390,height=760,theme='dark',status='offline',
   });
  }
  await page.goto('http://anchor.test/');
- await page.evaluate(({sources,theme,status,selection,format,trajectory,activate,realMotor,take,media})=>{
+ await page.evaluate(({sources,theme,status,selection,format,trajectory,activate,realMotor,take,media,dataType})=>{
   for(const tag of ['sp-textfield','sp-dropdown'])customElements.define(tag,class extends HTMLElement{
    get value(){return this._value===undefined?(this.getAttribute('value')||''):this._value;}set value(v){this._value=String(v);}
    get selectedIndex(){return this._index===undefined?Math.max(0,[...this.querySelectorAll('sp-menu-item')].findIndex(e=>e.hasAttribute('selected'))):this._index;}set selectedIndex(v){this._index=Number(v);}
@@ -32,11 +32,11 @@ async function open(browser,{width=390,height=760,theme='dark',status='offline',
   // UXP's initial font comes from its host; Chromium's initial font is serif.
   // Substitute a Windows UI font in this harness, not in product styles.
   const defaults=document.createElement('style');defaults.textContent='body,.bancada{font-family:"Segoe UI",sans-serif!important}';document.head.appendChild(defaults);
-  window.__test={status,selection,format,trajectory,busy:false,hostWrites:[],launches:[],native:[],requests:[],appliedChecks:[],theme};const t=window.__test;
+  window.__test={dataType,status,selection,format,trajectory,busy:false,hostWrites:[],launches:[],native:[],requests:[],appliedChecks:[],theme};const t=window.__test;
   let themeListener;document.theme={getCurrent:()=>t.theme,onUpdated:{addListener:fn=>themeListener=fn}};t.setTheme=name=>{t.theme=name;themeListener(name);};
   t.take={name:'Take de teste',start:0,end:2,inPoint:0,outPoint:2,trackIndex:0,sequenceId:'test-sequence',sequenceGuid:'test-sequence',projectGuid:'test-project',projectPath:'C:/Anchor-Test.prproj',projectItemId:'test-item'};
   if(take)Object.assign(t.take,take);
-  t.data=()=>({type:'external-face',name:'Rosto de teste',selection:t.take,W:t.format.width,H:t.format.height,fps:30,rows:Array.from({length:60},(_,i)=>({frame:i,x:t.format.width*(.43+.03*Math.sin(i/7)),y:t.format.height*(.36+.04*Math.cos(i/9)),angle:0,height:t.format.height*.14})),times:Array.from({length:60},(_,i)=>i/30)});
+  t.data=()=>({type:t.dataType||'external-face',name:'Rosto de teste',selection:t.take,W:t.format.width,H:t.format.height,fps:30,rows:Array.from({length:60},(_,i)=>({frame:i,x:t.format.width*(.43+.03*Math.sin(i/7)),y:t.format.height*(.36+.04*Math.cos(i/9)),angle:0,height:t.format.height*.14})),times:Array.from({length:60},(_,i)=>i/30)});
   const cache={},storage={};const folder={async getEntries(){return Object.values(storage);},async getEntry(n){if(!storage[n])throw Error('missing');return storage[n];},async createFile(n){return storage[n]={name:n,value:'',async read(){return this.value;},async write(v){this.value=v;}};}};
   const ppro={Project:{async getActiveProject(){return null;}},EventManager:{addGlobalEventListener(){},removeGlobalEventListener(){}},Constants:{}};
   const uxp={storage:{localFileSystem:{async getDataFolder(){return folder;},async getPluginFolder(){return {nativePath:'C:\\Anchor-Test'};}},formats:{binary:'binary'}},shell:{async openPath(p){t.launches.push(p);return '';}}};
@@ -47,7 +47,7 @@ async function open(browser,{width=390,height=760,theme='dark',status='offline',
   if(!realMotor)window.fetch=async()=>{throw Error('Unexpected fetch in test');};
   window.require=name=>{if(name==='uxp')return uxp;if(name==='premierepro')return ppro;let id=name.replace(/^\.\//,'');if(!id.endsWith('.js'))id+='.js';if(id==='engine.js')return {createEngine:()=>engine};if(id==='workflow.js')return {createWorkflow:()=>workflow};if(id==='preview-host.js')return preview;if(cache[id])return cache[id].exports;if(!sources[id])throw Error('Missing '+id);const module={exports:{}};cache[id]=module;new Function('require','module','exports',sources[id])(window.require,module,module.exports);if(id==='face-panel.js'){const init=module.exports.initializeFacePanel;module.exports.initializeFacePanel=options=>(t.face=init(options));}return module.exports;};
   window.require('./main.js');window.require('./bancada.js');if(activate)document.dispatchEvent(new Event('mousedown',{bubbles:true}));
- },{sources,theme,status,selection,format,trajectory,activate,realMotor,take,media});
+ },{sources,theme,status,selection,format,trajectory,activate,realMotor,take,media,dataType});
  await page.waitForFunction(()=>window.AnchorIntegration&&window.AnchorBancada);
  await page.evaluate(()=>{__test.firstReady={cssReady:getComputedStyle(document.getElementById('bancada')).getPropertyValue('--b-bg').trim()!==''};});
  await page.waitForFunction(()=>getComputedStyle(document.getElementById('bancada')).getPropertyValue('--b-bg').trim()!=='');

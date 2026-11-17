@@ -95,7 +95,8 @@ async function funcoes(browser){
   await editar(p,'shutterAngle',90);s=await aplicar(p);ok('Ângulo personalizado (90°) chega à gravação',s.shutterAngle===90,s.shutterAngle);
   await escolher(p,'bDestinationBox',0);s=await aplicar(p);ok('Voltar para Movimento',s.destination==='motion'&&!(await visivel(p,'#bBlur')),s.destination);
  });
- await caso(browser,'Avançados',PRONTO,async p=>{
+ await caso(browser,'Filtros de máscara escondidos no rosto',PRONTO,async p=>{await click(p,'#bAdvancedToggle');await p.waitForTimeout(60);ok('Trajeto de rosto: Outros métodos (filtros de máscara) escondido',!(await visivel(p,'#qualitySection')),null);});
+ await caso(browser,'Avançados',{...PRONTO,dataType:'mask'},async p=>{
   ok('Avançados começa fechado',!(await visivel(p,'#bAdvancedBody')),null);
   await click(p,'#bAdvancedToggle');await p.waitForTimeout(60);ok('Avançados abre',await visivel(p,'#bAdvancedBody'),null);
   const base=await aplicar(p);

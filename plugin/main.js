@@ -40,10 +40,10 @@
     $('sourceInfo').textContent='Nenhum trecho carregado';$('maskInfo').textContent='Selecione o clipe com a máscara rastreada.';
     $('formatInfo').textContent='';$('dataCount').textContent='';$('maskChooser').className='hidden';$('properties').className='hidden';
   }
-  const ready=(async()=>{if(!native)return;try{const folder=await require('uxp').storage.localFileSystem.getDataFolder();dataRepository=require('./repository.js').createRepository(folder);try{history=await(await folder.getEntry('anchor-session.log')).read();}catch(_){}journalFile=await folder.createFile('anchor-session.log',{overwrite:true});await journalFile.write(history.slice(-18000)+'\n=== Dynamic Anchor 1.7.2 ===\n');}catch(e){journalError=e;}})();
+  const ready=(async()=>{if(!native)return;try{const folder=await require('uxp').storage.localFileSystem.getDataFolder();dataRepository=require('./repository.js').createRepository(folder);try{history=await(await folder.getEntry('anchor-session.log')).read();}catch(_){}journalFile=await folder.createFile('anchor-session.log',{overwrite:true});await journalFile.write(history.slice(-18000)+'\n=== Dynamic Anchor 1.7.3 ===\n');}catch(e){journalError=e;}})();
   // Grava o registro em disco sem interromper nada (eventos do motor de rosto).
-  async function persistLog(){await ready;if(!native||journalError||!journalFile)return false;try{await journalFile.write((history.slice(-18000)+'\n=== Dynamic Anchor 1.7.2 ===\n'+$('log').value).slice(-60000));return true;}catch(_){return false;}}
-  async function checkpoint(s){if(busy){const phase=ui.describePhase(s);if(phase){operationPhase=phase;status(phase);updateCard();}}await ready;log(s);if(native){if(journalError||!journalFile)throw new Error('Registro de diagnóstico indisponível. Aplicação interrompida.');await journalFile.write((history.slice(-18000)+'\n=== Dynamic Anchor 1.7.2 ===\n'+$('log').value).slice(-60000));}}
+  async function persistLog(){await ready;if(!native||journalError||!journalFile)return false;try{await journalFile.write((history.slice(-18000)+'\n=== Dynamic Anchor 1.7.3 ===\n'+$('log').value).slice(-60000));return true;}catch(_){return false;}}
+  async function checkpoint(s){if(busy){const phase=ui.describePhase(s);if(phase){operationPhase=phase;status(phase);updateCard();}}await ready;log(s);if(native){if(journalError||!journalFile)throw new Error('Registro de diagnóstico indisponível. Aplicação interrompida.');await journalFile.write((history.slice(-18000)+'\n=== Dynamic Anchor 1.7.3 ===\n'+$('log').value).slice(-60000));}}
   const nativePoints=native?require('./linear-point-keyframes.js').createLinearPointKeyframes({ppro:require('premierepro'),loadTemplate:require('./native-linear-template.js').createNativeLinearTemplate({ppro:require('premierepro'),uxp:require('uxp')})}):null;
   const engine=native?require('./engine.js').createEngine(require('premierepro'),C,checkpoint,{pointKeyframes:nativePoints}):null;
   const repository={read:async key=>{await ready;if(!dataRepository)throw Error('Armazenamento indisponível.');return dataRepository.read(key);},write:async(key,value)=>{await ready;if(!dataRepository)throw Error('Armazenamento indisponível.');return dataRepository.write(key,value);}};
@@ -125,7 +125,7 @@
   function controls(){
     if(panelDisposed)return;
     for(const e of document.querySelectorAll('[role=button],[role=checkbox],[role=slider],sp-textfield,sp-dropdown'))e.disabled=busy;
-    if(!busy){$('useRot').disabled=!rotationAllowed();if($('useRot').disabled)$('useRot').checked=false;$('maxRot').disabled=$('deadzone').disabled=$('maxRotSlider').disabled=$('deadzoneSlider').disabled=!$('useRot').checked;$('btnProperties').disabled=!masks.length;$('btnApply').disabled=!masks.length;$('smoothWin').disabled=$('tremorFilter').checked&&!$('useRot').checked;}
+    if(!busy){$('useRot').disabled=!rotationAllowed();if($('useRot').disabled)$('useRot').checked=false;$('maxRot').disabled=$('deadzone').disabled=$('maxRotSlider').disabled=$('deadzoneSlider').disabled=!$('useRot').checked;$('btnProperties').disabled=!masks.length;$('btnApply').disabled=!masks.length;$('smoothWin').disabled=false;}
     $('tremorHint').className='help compact'+($('tremorFilter').checked?'':' hidden');
     for(const [group,check]of [['rotationControl','useRot'],['maxRotControl','useRot'],['deadzoneControl','useRot']])$(group).setAttribute('data-inactive',String(!$(check).checked));
     try{$('finishingSummary').textContent=finishingSummary();}catch(_){}
@@ -133,7 +133,9 @@
     const maskTrajectory=trajectories.some(d=>d&&!preparedReference(d));
     for(const id of ['movementControls','finishingSection'])$(id).classList.toggle('hidden',!maskTrajectory);
     const hasTrajectory=trajectories.some(Boolean);
-    $('qualitySection').classList.toggle('hidden',!hasTrajectory);
+    // Filtros de máscara (saltos isolados, centro do polígono) não têm efeito no trajeto do rosto, que já sai suavizado do motor.
+    const faceOnly=trajectories.filter(Boolean).length>0&&trajectories.filter(Boolean).every(d=>d.type==='external-face');
+    $('qualitySection').classList.toggle('hidden',!hasTrajectory||faceOnly);
     $('maskCenterMethods').classList.toggle('hidden',!maskTrajectory);
     $('movementSummary').textContent='Ativo: '+ui.describeMovement({quality:tools?tools.getQuality():{},smooth:$('smoothWin').value,tremor:$('tremorFilter').checked,rotation:$('useRot').checked})+'.';
     if(tools&&tools.framingChanged)try{tools.framingChanged();}catch(_){}
@@ -292,7 +294,7 @@
     const refIndex=0,smoothPercent=numeric('smoothWin',0,100),amount=mode==='fixed'?numeric('scalePercent',0,900):mode==='none'?0:20;
     const resetScale=mode==='none';
     const effectiveMode=mode==='none'?'fixed':mode==='fixed'&&amount===0?'none':mode;
-    const quality=tools?tools.getQuality():{center:'original',filter:'none'};
+    const quality=d&&d.type==='external-face'?{center:'original',filter:'none'}:tools?tools.getQuality():{center:'original',filter:'none'};
     return {destination:$('useTransform').checked?'transform':'motion',W:d.W,H:d.H,fps:d.fps,refIndex,quality:prepared?{center:'original',filter:quality.filter,ignoreFirst:false}:{...quality,ignoreFirst:true},sourceTimes:d.times,sourceSelection:d.selection,replace:true,createNew:false,resetScale,replaceThroughEnd:d.partial===true,limitToTrackedRange:d.partial===true,
       shutterAngle:$('useTransform').checked?numeric('shutterAngle',0,360):0,
       opt:{useX:true,useY:true,...(fillFraming?{guardFill:true}:{}),rotation:false,
@@ -325,8 +327,19 @@
   }
   $('btnApply').addEventListener('click',()=>applyNow());
   async function applyFlow(){
-    const first=await ensureTrajectories();
+    let first=await ensureTrajectories();
     const sourceNotice=sourceConflict();if(sourceNotice)throw Error(sourceNotice);
+    // Velocidade trocada depois da análise: refaz a análise na velocidade escolhida, com a mesma pessoa, e aplica o trajeto novo.
+    if(tools&&typeof tools.speedMismatch==='function'){
+      const pending=(batchMasks.length?batchMasks:[first]).filter(d=>tools.speedMismatch(d));
+      if(pending.length&&batchMasks.length)throw Error(tools.speedMismatch(pending[0]));
+      if(pending.length){
+        status('Refazendo a análise em '+tools.speedLabel()+' com a mesma pessoa…');log('VELOCIDADE: trajeto analisado em outra velocidade; nova análise antes de aplicar.');
+        await tools.reanalyze();
+        first=await ensureTrajectories();
+        if(tools.speedMismatch(first))throw Error('A nova análise não terminou. Confira o aviso e aplique de novo.');
+      }
+    }
     if(trajectoryNeedsConfirmation){const selected=batchMasks.length?batchMasks:[first];for(const d of selected)await workflow.confirm(d.selection);trajectoryNeedsConfirmation=false;log('ORIGEM: aplicar o trajeto salvo escolhido pelo botão de aplicação.');}
     const jobs=[],globalSettings=settingsSnapshot();
     for(const d of batchMasks.length?batchMasks:[first]){
@@ -548,7 +561,7 @@
 
   function notifySequenceFormat(){if(busy||!lastSelected)return;if(tools&&tools.selectionChanged(lastSelected,{formatChanged:true}))status('O formato da sequência mudou. Clique em Analisar rosto para tentar novamente.');controls();}
   if(typeof window!=='undefined')window.AnchorIntegration={get busy(){return busy;},loadedSourceKind(){const d=masks[selectedMask];return d?(d.type==='external-face'?0:1):null;},settingsSnapshot,settingsForTest:settings,updateTarget,refreshSelection,notifySequenceFormat,selectTrackingSource};
-  chooseMode('auto');updateTarget();log('Dynamic Anchor 1.7.2. Entrada: máscara rastreada do projeto salvo.');
+  chooseMode('auto');updateTarget();log('Dynamic Anchor 1.7.3. Entrada: máscara rastreada do projeto salvo.');
 })();
 
 
