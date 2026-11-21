@@ -40,10 +40,10 @@
     $('sourceInfo').textContent='Nenhum trecho carregado';$('maskInfo').textContent='Selecione o clipe com a máscara rastreada.';
     $('formatInfo').textContent='';$('dataCount').textContent='';$('maskChooser').className='hidden';$('properties').className='hidden';
   }
-  const ready=(async()=>{if(!native)return;try{const folder=await require('uxp').storage.localFileSystem.getDataFolder();dataRepository=require('./repository.js').createRepository(folder);try{history=await(await folder.getEntry('anchor-session.log')).read();}catch(_){}journalFile=await folder.createFile('anchor-session.log',{overwrite:true});await journalFile.write(history.slice(-18000)+'\n=== Dynamic Anchor 1.7.3 ===\n');}catch(e){journalError=e;}})();
+  const ready=(async()=>{if(!native)return;try{const folder=await require('uxp').storage.localFileSystem.getDataFolder();dataRepository=require('./repository.js').createRepository(folder);try{history=await(await folder.getEntry('anchor-session.log')).read();}catch(_){}journalFile=await folder.createFile('anchor-session.log',{overwrite:true});await journalFile.write(history.slice(-18000)+'\n=== Dynamic Anchor 1.7.5 ===\n');}catch(e){journalError=e;}})();
   // Grava o registro em disco sem interromper nada (eventos do motor de rosto).
-  async function persistLog(){await ready;if(!native||journalError||!journalFile)return false;try{await journalFile.write((history.slice(-18000)+'\n=== Dynamic Anchor 1.7.3 ===\n'+$('log').value).slice(-60000));return true;}catch(_){return false;}}
-  async function checkpoint(s){if(busy){const phase=ui.describePhase(s);if(phase){operationPhase=phase;status(phase);updateCard();}}await ready;log(s);if(native){if(journalError||!journalFile)throw new Error('Registro de diagnóstico indisponível. Aplicação interrompida.');await journalFile.write((history.slice(-18000)+'\n=== Dynamic Anchor 1.7.3 ===\n'+$('log').value).slice(-60000));}}
+  async function persistLog(){await ready;if(!native||journalError||!journalFile)return false;try{await journalFile.write((history.slice(-18000)+'\n=== Dynamic Anchor 1.7.5 ===\n'+$('log').value).slice(-60000));return true;}catch(_){return false;}}
+  async function checkpoint(s){if(busy){const phase=ui.describePhase(s);if(phase){operationPhase=phase;status(phase);updateCard();}}await ready;log(s);if(native){if(journalError||!journalFile)throw new Error('Registro de diagnóstico indisponível. Aplicação interrompida.');await journalFile.write((history.slice(-18000)+'\n=== Dynamic Anchor 1.7.5 ===\n'+$('log').value).slice(-60000));}}
   const nativePoints=native?require('./linear-point-keyframes.js').createLinearPointKeyframes({ppro:require('premierepro'),loadTemplate:require('./native-linear-template.js').createNativeLinearTemplate({ppro:require('premierepro'),uxp:require('uxp')})}):null;
   const engine=native?require('./engine.js').createEngine(require('premierepro'),C,checkpoint,{pointKeyframes:nativePoints}):null;
   const repository={read:async key=>{await ready;if(!dataRepository)throw Error('Armazenamento indisponível.');return dataRepository.read(key);},write:async(key,value)=>{await ready;if(!dataRepository)throw Error('Armazenamento indisponível.');return dataRepository.write(key,value);}};
@@ -561,7 +561,7 @@
 
   function notifySequenceFormat(){if(busy||!lastSelected)return;if(tools&&tools.selectionChanged(lastSelected,{formatChanged:true}))status('O formato da sequência mudou. Clique em Analisar rosto para tentar novamente.');controls();}
   if(typeof window!=='undefined')window.AnchorIntegration={get busy(){return busy;},loadedSourceKind(){const d=masks[selectedMask];return d?(d.type==='external-face'?0:1):null;},settingsSnapshot,settingsForTest:settings,updateTarget,refreshSelection,notifySequenceFormat,selectTrackingSource};
-  chooseMode('auto');updateTarget();log('Dynamic Anchor 1.7.3. Entrada: máscara rastreada do projeto salvo.');
+  chooseMode('auto');updateTarget();log('Dynamic Anchor 1.7.5. Entrada: máscara rastreada do projeto salvo.');
 })();
 
 

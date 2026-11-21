@@ -3,7 +3,8 @@
  const startup=require('./startup.js').gate;
  const $=id=>document.getElementById(id),panel=$('bancada'),api=window.AnchorIntegration,G=require('./preview-geometry.js'),H=require('./preview-host.js');
  panel.style.width='100%';panel.style.height='100%';panel.style.marginLeft='0px';panel.style.marginRight='0px';
- let source=0,sourcePicked=false,format=null,selected=null,frame=null,reading=false,closed=false,epoch=0,lastKey,mode='auto';
+ // sourcePicked vale para o take em que a origem foi escolhida (pickedFor); a releitura do mesmo take não a desfaz.
+ let source=0,sourcePicked=false,pickedFor,format=null,selected=null,frame=null,reading=false,closed=false,epoch=0,lastKey,mode='auto';
  const hide=(id,on)=>$(id).classList.toggle('hidden',!!on),event=(id,type='change')=>$(id).dispatchEvent(new Event(type,{bubbles:true}));
  async function discard(){const previous=frame;frame=null;$('bFirstImage').setAttribute('src','');$('bFirstImage').style.display='none';if(previous)try{await previous.file.delete();}catch(_){} }
  function reflow(){
@@ -54,7 +55,7 @@
   reflow();
   ddSync();
  }
- $('bSource').addEventListener('change',async()=>{sourcePicked=true;source=$('bSource').selectedIndex;api.selectTrackingSource(source);epoch++;lastKey=undefined;await discard();sync();refresh();});
+ $('bSource').addEventListener('change',async()=>{sourcePicked=true;pickedFor=selected?selected.key:undefined;source=$('bSource').selectedIndex;api.selectTrackingSource(source);epoch++;lastKey=undefined;await discard();sync();refresh();});
  for(const item of panel.querySelectorAll('#bSpeed .b-seg-item')){const pick=()=>{if(api.busy)return;const i=Number(item.getAttribute('data-speed'));const id=['faceSampleNormal','faceSampleFast','faceSampleUltra'][i];if(id&&$(id).disabled)return;markSpeed(i);speedHold=Date.now()+1200;if(id)$(id).click();setTimeout(sync,120);};item.addEventListener('click',pick);item.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick();return;}
    // Grupo de opções: setas, Home e End movem a escolha (Rápido e Ultra ficam ao alcance do teclado).
    const items=[...panel.querySelectorAll('#bSpeed .b-seg-item')],at=items.indexOf(item);let to=-1;
@@ -72,7 +73,8 @@
    const next=await H.read(require('premierepro'));
    const changedFormat=format&&selected&&String(selected.sequence.guid)===String(next.sequence.guid)&&(format.width!==next.format.width||format.height!==next.format.height||format.pixelAspect!==next.format.pixelAspect);
    format=next.format;selected=next;if(changedFormat&&api.notifySequenceFormat)api.notifySequenceFormat();
-   if(next.key!==lastKey){lastKey=next.key;sourcePicked=false;const ticket=++epoch;await discard();$('bFirstMessage').textContent=next.reason||'Lendo o primeiro frame…';sync();
+   if(next.key!==pickedFor)sourcePicked=false;
+   if(next.key!==lastKey){lastKey=next.key;const ticket=++epoch;await discard();$('bFirstMessage').textContent=next.reason||'Lendo o primeiro frame…';sync();
     if(next.key&&source===0){
      try{
       const captured=await H.capture(require('premierepro'),require('uxp'),next,()=>ticket===epoch&&!closed&&source===0);

@@ -1,6 +1,6 @@
 {
   "nome": "Dynamic Anchor",
-  "versao": "1.7.3",
+  "versao": "1.7.5",
   "tecnologia": "UXP",
   "acento": "#FFBF48",
   "tintaAcento": "#1B1B1F",
@@ -12,10 +12,10 @@
   ],
   "requisitos": "Windows 10 ou 11 (64 bits) e Adobe Premiere Pro 26 ou mais novo, com o Creative Cloud instalado.",
   "aviso": "O modelo de cabeça inteira usa pesos treinados no conjunto CelebAMask-HQ, cujos termos permitem só uso não comercial (pesquisa e educação). Detalhes em TERCEIROS.txt, abaixo.",
-  "pacote": "../dist/Dynamic-Anchor-1.7.3.ccx",
+  "pacote": "../dist/Dynamic-Anchor-1.7.5.ccx",
   "logo": "icones/anchor-logo.png",
   "icone": "icones/anchor.ico",
   "licenca": "../plugin/LICENSE.txt",
   "terceiros": "../plugin/TERCEIROS.txt",
-  "saida": "../dist/Instalar-Dynamic-Anchor-1.7.3.exe"
+  "saida": "../dist/Instalar-Dynamic-Anchor-1.7.5.exe"
 }

@@ -57,12 +57,16 @@ def _limitar_threads_opencv(cv2_module, max_threads=MAX_THREADS_OPENCV):
 # process requests concurrently. Apply the tested host cap exactly once here.
 OPENCV_THREADS_AT_STARTUP = _limitar_threads_opencv(cv2)
 
-VERSAO_MOTOR = '0.5.0'
+VERSAO_MOTOR = '0.5.2'
 # Epoch do RESULTADO, separado da versão empacotada e da execução paralela.
 # BUMPAR o epoch correspondente sempre que modelo, pixels/pré-processamento,
 # detecção, associação, interpolação, grade ou referência mudarem os dados.
 # Caixa mantém o algoritmo legado0.3.2; média5 preserva seu namespace0.3.5/v2.
-EPOCAS_ANALISE = {'caixa': '0.4.3-box-linear-v1', 'media5': '0.4.3-mean5-linear-v1', 'video15': '0.4.3', 'adaptativo': '0.4.4-guarded-handoff-v1', 'cabeca':'0.4.4-cap-reacquisition-handoff-v1'}
+# 0.5.1: a associação ganhou a guarda de identidade (outras pessoas vistas junto com o alvo,
+# aparência com a cabeça). Todas as referências usam o Rastreador: nenhum cache antigo vale.
+EPOCAS_ANALISE = {k: v + '+identity-guard-0.5.1' for k, v in {
+    'caixa': '0.4.3-box-linear-v1', 'media5': '0.4.3-mean5-linear-v1', 'video15': '0.4.3',
+    'adaptativo': '0.4.4-guarded-handoff-v1', 'cabeca': '0.4.4-cap-reacquisition-handoff-v1+deshake-v1'}.items()}
 VERSAO_INSTRUMENTACAO = 1
 FORMATO = 'anchor-face-track'
 MOTOR = 'face-yunet-v1'
@@ -438,9 +442,11 @@ class Detector:
                 # coordenadas na resolução de saída (sequência)
                 'x': (x + bw / 2) * k * escala_x, 'y': (y + bh / 2) * k * escala_y,
                 'w': bw * k * escala_x, 'h': bh * k * escala_y, 'score': float(linha[14]),
-                # aparência: rosto e tronco (roupa) na imagem de análise
+                # aparência: rosto, tronco (roupa) e cabeça (cabelo, boné, chapéu: a faixa
+                # logo acima da caixa do YuNet, que começa na testa) na imagem de análise
                 'rosto': histograma(hsv, x, y, bw, bh),
                 'tronco': histograma(hsv, x - bw * 0.5, y + bh * 1.3, bw * 2.0, bh * 2.0),
+                'cabeca': histograma(hsv, x - bw * 0.1, y - bh * 0.5, bw * 1.2, bh * 0.6),
                 'caixa': (x, y, bw, bh),
             })
             if self.referencia == 'media5':
@@ -476,19 +482,116 @@ class Rastreador:
         self.t = None
         self.ref_rosto = None
         self.ref_tronco = None
+        self.ref_cabeca = None
         self.ambiguos = 0
         self.tempos_ambiguos = []
+        # Guarda de identidade (0.5.1). Todo rosto visto no MESMO quadro que o alvo
+        # confirmado é outra pessoa: fica acompanhado em self.outros (posição, tamanho e
+        # aparência própria) e nunca é assumido como o alvo, nem no reencontro.
+        self.outros = []
+        self.ap_recente = None
+        self.recusas = {'outraPessoa': 0, 'quedaAparencia': 0}
+        self.tempos_recusa = []
+
+    PESOS_APARENCIA = (('tronco', 0.45), ('rosto', 0.3), ('cabeca', 0.25))
+
+    @staticmethod
+    def comparar(refs, d):
+        """Semelhança ponderada entre as referências (tronco, rosto, cabeça) e uma detecção.
+        Componentes ausentes (fora da imagem) ficam de fora e os pesos se redistribuem."""
+        soma = peso = 0.0
+        for nome, w in Rastreador.PESOS_APARENCIA:
+            s = semelhanca(refs.get(nome), d.get(nome))
+            if s is not None:
+                soma += w * s
+                peso += w
+        return soma / peso if peso else 0.5
 
     def aparencia(self, d):
-        a = semelhanca(self.ref_tronco, d['tronco'])
-        b = semelhanca(self.ref_rosto, d['rosto'])
-        if a is None and b is None:
-            return 0.5
-        if a is None:
-            return b
-        if b is None:
-            return a
-        return 0.6 * a + 0.4 * b
+        return self.comparar({'tronco': self.ref_tronco, 'rosto': self.ref_rosto, 'cabeca': self.ref_cabeca}, d)
+
+    def _registrar_recusa(self, motivo, t):
+        self.recusas[motivo] += 1
+        if len(self.tempos_recusa) < 200:
+            self.tempos_recusa.append((round(t, 4), motivo))
+
+    def outra_pessoa(self, d, t, ap=None):
+        """True se a detecção continua uma das outras pessoas vistas junto com o alvo.
+
+        Exige posição coerente com essa pessoa e aparência pelo menos tão parecida com
+        ela quanto com o alvo: um rosto que se parece mais com o alvo não é recusado só
+        por estar perto de alguém."""
+        if not self.outros:
+            return False
+        ap = self.aparencia(d) if ap is None else ap
+        sd = math.sqrt(d['w'] * d['h'])
+        for o in self.outros:
+            dt = t - o['t']
+            if dt < 0 or dt > self.MEMORIA_OUTROS:
+                continue
+            razao = max(sd / o['s'], o['s'] / sd)
+            dist = math.hypot(d['x'] - o['c'][0], d['y'] - o['c'][1]) / o['s']
+            if razao > 1.8 or dist > 0.5 + 2.0 * min(dt, 1.0):
+                continue
+            if self.comparar(o['refs'], d) >= ap - 0.05:
+                return True
+        return False
+
+    MEMORIA_OUTROS = 2.0
+
+    @staticmethod
+    def sobreposicao(a, b):
+        """Interseção das caixas (centro, w, h) sobre a área da menor."""
+        ix = min(a['x'] + a['w'] / 2, b['x'] + b['w'] / 2) - max(a['x'] - a['w'] / 2, b['x'] - b['w'] / 2)
+        iy = min(a['y'] + a['h'] / 2, b['y'] + b['h'] / 2) - max(a['y'] - a['h'] / 2, b['y'] - b['h'] / 2)
+        if ix <= 0 or iy <= 0:
+            return 0.0
+        return ix * iy / max(1e-6, min(a['w'] * a['h'], b['w'] * b['h']))
+
+    # Caixa que cobre essa fração da caixa do alvo pode ser uma segunda caixa da mesma
+    # cabeça (o YuNet às vezes devolve duas num rosto de perfil). Medido na bancada:
+    # caixas repetidas cobrem 0,43 a 0,67; pessoas diferentes encostadas, 0 a 0,12.
+    SOBREPOSICAO_MESMA_CABECA = 0.25
+
+    def _atualizar_outros(self, deteccoes, alvo, t):
+        """Acompanha as outras pessoas. Com o alvo confirmado no quadro, toda outra
+        detecção separada dele é outra pessoa (nova ou já conhecida). Sem o alvo, só
+        continua quem já era conhecido e está claramente no mesmo lugar: um rosto novo
+        pode ser o alvo."""
+        livres = [o for o in self.outros if t - o['t'] <= self.MEMORIA_OUTROS]
+        if alvo is not None:
+            # Uma "outra pessoa" em cima do alvo confirmado era, na verdade, o alvo.
+            livres = [o for o in livres if self.sobreposicao(alvo, {'x': o['c'][0], 'y': o['c'][1], 'w': o['s'], 'h': o['s']}) < 0.5]
+        usados = set()
+        for d in deteccoes:
+            if d is alvo:
+                continue
+            sd = math.sqrt(d['w'] * d['h'])
+            if alvo is not None and self.sobreposicao(alvo, d) >= self.SOBREPOSICAO_MESMA_CABECA:
+                continue  # possível segunda caixa da cabeça do próprio alvo
+            melhor = None
+            for i, o in enumerate(livres):
+                if i in usados:
+                    continue
+                dt = max(0.0, t - o['t'])
+                razao = max(sd / o['s'], o['s'] / sd)
+                dist = math.hypot(d['x'] - o['c'][0], d['y'] - o['c'][1]) / o['s']
+                limite = (0.6 + 1.5 * min(dt, 1.0)) if alvo is not None else (0.35 + 1.0 * min(dt, 1.0))
+                if razao <= (1.7 if alvo is not None else 1.5) and dist <= limite and (melhor is None or dist < melhor[0]):
+                    melhor = (dist, i)
+            refs = {k: d.get(k) for k, _ in self.PESOS_APARENCIA}
+            if melhor is not None:
+                o = livres[melhor[1]]
+                usados.add(melhor[1])
+                o['c'], o['s'], o['t'] = (d['x'], d['y']), 0.7 * o['s'] + 0.3 * sd, t
+                if alvo is not None and d['score'] >= 0.8:
+                    for k, v in refs.items():
+                        if v is not None:
+                            o['refs'][k] = v.copy() if o['refs'].get(k) is None else cv2.addWeighted(o['refs'][k], 0.9, v, 0.1, 0)
+            elif alvo is not None:
+                livres.append({'c': (d['x'], d['y']), 's': sd, 't': t, 'refs': {k: (v.copy() if v is not None else None) for k, v in refs.items()}})
+                usados.add(len(livres) - 1)
+        self.outros = livres
 
     def escolher_inicial(self, deteccoes):
         if not deteccoes:
@@ -512,8 +615,10 @@ class Rastreador:
         self.s = math.sqrt(d['w'] * d['h'])
         self.v = (0.0, 0.0)
         self.t = t
-        self.ref_rosto = d['rosto']
-        self.ref_tronco = d['tronco']
+        self.ref_rosto = d.get('rosto')
+        self.ref_tronco = d.get('tronco')
+        self.ref_cabeca = d.get('cabeca')
+        self.ap_recente = None
 
     def atualizar(self, deteccoes, t):
         """Devolve a detecção do alvo neste quadro ou None."""
@@ -524,9 +629,15 @@ class Rastreador:
             if d is not None:
                 self.assumir(d, t)
                 self.iniciais = [(x['x'] / self.W, x['y'] / self.H, x is d) for x in deteccoes]
+                self._atualizar_outros(deteccoes, d, t)
             return d
         if not deteccoes:
             return None
+        d = self._associar(deteccoes, t)
+        self._atualizar_outros(deteccoes, d, t)
+        return d
+
+    def _associar(self, deteccoes, t):
         dt = max(1e-6, t - self.t)
         dtv = min(dt, 0.5)
         px, py = self.c[0] + self.v[0] * dtv, self.c[1] + self.v[1] * dtv
@@ -543,6 +654,15 @@ class Rastreador:
                 if ap < 0.55 or razao > 2.2:
                     continue
             elif dist > portao or razao > 1.7:
+                continue
+            # Guarda de identidade: quem já foi visto junto com o alvo é outra pessoa.
+            if self.outra_pessoa(d, t, ap):
+                self._registrar_recusa('outraPessoa', t)
+                continue
+            # Queda brusca de aparência (rosto, roupa e cabeça juntos) em relação ao que
+            # o alvo vinha mostrando: outra pessoa entrou onde o alvo estava. Prefere perder.
+            if self.ap_recente is not None and ap < min(0.6, self.ap_recente - (0.25 if perdido else 0.2)):
+                self._registrar_recusa('quedaAparencia', t)
                 continue
             custo = dist / self.s + 1.5 * (1.0 - ap) + 0.8 * abs(math.log(razao))
             opcoes.append((custo, ap, d))
@@ -567,9 +687,10 @@ class Rastreador:
         self.c = nc
         self.s = 0.7 * self.s + 0.3 * math.sqrt(d['w'] * d['h'])
         self.t = t
+        self.ap_recente = melhor[1] if self.ap_recente is None else 0.8 * self.ap_recente + 0.2 * melhor[1]
         if d['score'] >= 0.8 and melhor[1] >= 0.6:
-            for nome in ('rosto', 'tronco'):
-                novo = d[nome]
+            for nome in ('rosto', 'tronco', 'cabeca'):
+                novo = d.get(nome)
                 ref = getattr(self, 'ref_' + nome)
                 if novo is not None:
                     setattr(self, 'ref_' + nome, novo.copy() if ref is None else cv2.addWeighted(ref, 0.95, novo, 0.05, 0))
@@ -1397,6 +1518,8 @@ def executar(pedido, opcoes=None, progresso=None, cancelado=None, informar=None,
             'decodedFrames': len(amostras), 'analyzedFrames': len(analisadas),
             'detectedFrames': sum(1 for x in amostras if x['det'] is not None),
             'ambiguousFrames': rastreador.ambiguos, 'segments': len(segmentos),
+            'identityGuard': {'method': 'co-visible-others-head-appearance-v1', 'refused': dict(rastreador.recusas),
+                              'times': [list(x) for x in rastreador.tempos_recusa[:50]]},
             'interpolatedRows': sum(1 for r in linhas if r['source'] == 'interpolated'),
             'seconds': round(gasto, 2), 'framesPerSecond': round(len(amostras) / max(1e-6, gasto), 1),
             'step': passo, 'analysisWidth': o['analise'],

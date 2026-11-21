@@ -33,7 +33,7 @@ import anchor_rosto as R  # noqa: E402
 
 API = 1
 PORTA = int(os.environ.get('ANCHOR_PORTA', '47833'))
-VERSAO_SERVICO = '0.5.0'  # versão empacotada; o cache usa o epoch dos dados em R.EPOCAS_ANALISE
+VERSAO_SERVICO = '0.5.2'  # versão empacotada; o cache usa o epoch dos dados em R.EPOCAS_ANALISE
 EXTENSOES = {'.mp4', '.mov', '.mxf', '.m4v', '.avi', '.mts', '.m2ts', '.mkv', '.wmv', '.mpg', '.mpeg'}
 MAX_CORPO = 1024 * 1024
 MAX_TAREFAS = 8

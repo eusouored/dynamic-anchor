@@ -123,6 +123,15 @@ async function funcoes(browser){
   ok('Ler máscara sem projeto salvo explica o motivo (sem travar)',st&&st.length>5&&!(await t(p,'AnchorIntegration.busy')),st);
   await escolher(p,'bSourceBox',0);ok('Voltar para Rosto mostra Analisar rosto',await visivel(p,'#btnFaceAuto'),null);
  });
+ // Relato de uso (1.7.4): com um trajeto de ROSTO já carregado, escolher Máscara voltava sozinho para Rosto.
+ await caso(browser,'Origem Máscara com trajeto de rosto carregado',PRONTO,async p=>{
+  await escolher(p,'bSourceBox',1);await p.waitForTimeout(700);
+  const depois=await p.evaluate(()=>document.getElementById('bSource').selectedIndex);
+  ok('Com trajeto de rosto, escolher Máscara fica em Máscara',depois===1&&await visivel(p,'#btnReadMask'),{origem:depois});
+  await click(p,'#btnRefreshSelection');await p.waitForTimeout(700);
+  ok('Atualizar o mesmo take mantém Máscara',(await p.evaluate(()=>document.getElementById('bSource').selectedIndex))===1&&await visivel(p,'#btnReadMask'),null);
+  await escolher(p,'bSourceBox',0);await p.waitForTimeout(400);ok('E dá para voltar para Rosto',await visivel(p,'#btnFaceAuto'),null);
+ });
  await caso(browser,'Aplicar',PRONTO,async p=>{
   const s=await aplicar(p);const k=await t(p,'__test.appliedKeys[0].length');
   ok('Aplicar grava keyframes para todo o trecho',k>=30,{keys:k});

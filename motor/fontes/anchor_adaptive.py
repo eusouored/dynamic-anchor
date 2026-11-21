@@ -145,8 +145,10 @@ class SelectedVisualTrack:
         # velocity gating, but only with similar appearance and a unique match.
         if selected is None and prediction is not None and self.last_face_time is not None and time-self.last_face_time <= MAX_FLOW_SECONDS:
             size = max(prediction['w'], prediction['h'])
+            # Never hand the track to someone already seen next to the target (identity guard).
+            other = getattr(self.tracker, 'outra_pessoa', None)
             matches = sorted([(math.hypot(d['x']-prediction['x'],d['y']-prediction['y'])/size,d)
-                for d in detections if self.tracker.aparencia(d) >= .65], key=lambda p:p[0])
+                for d in detections if self.tracker.aparencia(d) >= .65 and not (other and other(d, time))], key=lambda p:p[0])
             if matches and matches[0][0] < .45 and (len(matches)==1 or matches[1][0]-matches[0][0] > .3):
                 selected = matches[0][1]
                 self.tracker.c = (selected['x'], selected['y'])

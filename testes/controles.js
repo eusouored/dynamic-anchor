@@ -15,7 +15,8 @@ const out=path.resolve(process.argv[2]||path.join(__dirname,'out','controles'));
   await page.locator('#tremorFilter').screenshot({path:path.join(out,`tremor-off-${tag}.png`)});
   await page.evaluate(()=>document.getElementById('tremorFilter').click());await page.waitForTimeout(60);
   await page.locator('#tremorFilter').screenshot({path:path.join(out,`tremor-on-${tag}.png`)});
-  await page.locator('#bodyQuality').screenshot({path:path.join(out,`metodos-${tag}.png`)});
+  // 1.7.3+: "Outros métodos" fica escondido no trajeto de rosto (filtros sem efeito medido); só fotografa se visível.
+  if(await page.locator('#bodyQuality').isVisible())await page.locator('#bodyQuality').screenshot({path:path.join(out,`metodos-${tag}.png`)});
   // seletor aberto + foco: nada amarelo em volta
   await page.evaluate(()=>{const b=document.querySelector('#bZoomBox .b-dd-btn');b.focus();b.click();});await page.waitForTimeout(80);
   r[tag]=await page.evaluate(()=>{const box=document.getElementById('bZoomBox'),btn=box.querySelector('.b-dd-btn'),cs=getComputedStyle(box),bs=getComputedStyle(btn);

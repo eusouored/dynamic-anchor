@@ -30,7 +30,9 @@ def repair(rows,cancelled=None):
   # Check immediate real measurements, independently of the wider trusted-
   # contour interval. Reconstructed intermediate rows cannot vote as reads.
   m=bisect.bisect_left(measured,i)
-  if not m or m==len(measured)-1 or measured[m]!=i:continue
+  # 0.5.1: a row after the last real measurement (end of the take) has no neighbor
+  # on the right; bisect returns len(measured) there and the old test indexed past the end.
+  if not m or m>=len(measured)-1 or measured[m]!=i:continue
   before,after=rows[measured[m-1]],rows[measured[m+1]];span=after['time']-before['time']
   if not 0<span<=MAX_INTERVAL_SECONDS+1e-7:continue
   u=(row['time']-before['time'])/span;prediction={k:before['trackingPoint'][k]*(1-u)+after['trackingPoint'][k]*u for k in('x','y')}

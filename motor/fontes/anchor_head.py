@@ -274,6 +274,9 @@ def finish_head(job,options,progress,started,model_ready,face_done,base,groups,m
  runs,gap_samples,gap_report=bridge(runs,job,fps,mfps,step,plan,cancelled)
  from anchor_reference_occlusion import repair as repair_reference
  repaired=[repair_reference(run,cancelled)for run in runs];runs=[r for r,report in repaired];reference_reports=[report for r,report in repaired]
+ # 0.5.1: tremida localizada (troca detector/fluxo e contorno copiado do rosto), por trecho.
+ from anchor_deshake import stabilize as deshake,METHOD as DESHAKE_METHOD,WINDOW_SECONDS as DESHAKE_WINDOW
+ deshake_reports=[deshake(run,fps)for run in runs]
  primary=max(runs,key=len);base['rows']=primary;base['segments']=[dict(start=run[0]['time'],end=run[-1]['time'],samples=len(run),primary=run is primary,rows=[]if run is primary else run)for run in runs]
  expected=int(np.ceil((job['outPoint']-job['inPoint'])*fps-1e-7));base['coverage']=round(min(1.,len(primary)/expected),4)
  base['trackingReference']=dict(method=METHOD,offset=dict(x=0,y=0),sampling=dict(method='fixed-stride-v1',step=step),model=dict(name='bisenet-resnet18-head',sha256=MODEL_SHA,runtime='onnxruntime'),applicationSampling=dict(method='analyzed-source-frames-v1',frameMapping='nearest-sequence-frame-v1'),smoothing=dict(method='robust-local-quadratic-v1',windowSeconds=.14),stabilization=dict(method='face-motion-head-offset-v1',offsetSigmaSeconds=OFFSET_SIGMA_SECONDS,measuredOffsetsOnly=True,maxHeadFraction=.5,headLossFallback='selected-face-scale-bidirectional-shape-v2',visualMotion='similarity-reference-v1',contourMotion='selected-headwear-top-motion-v3',headwearAdaptation=dict(method='visible-accessory-hysteresis-v1',seconds=.2,presentFraction=.12,absentFraction=.02,minimumVisibleParts=2),occlusionMotion=OCCLUSION_METHOD,shapeValidation='face-relative-temporal-shape-v1',offsetSupport='bounded-observed-envelope-v1',gapRecovery='bidirectional-csrt-head-gap-v1',occlusionMaxFraction=.06,occlusionBlendSeconds=.15,occlusionSigmaSeconds=.4),association=dict(method=SELECTION,identityVerified=False,instanceSeparation='face-seeded-competitive-v1'))
@@ -283,6 +286,8 @@ def finish_head(job,options,progress,started,model_ready,face_done,base,groups,m
  base['trackingReference']['stabilization']['occlusionReferenceRepair']=dict(method='bounded-contour-reference-v2',maxIntervalSeconds=.5,maxCorrectionFraction=.5,triggerResidualFraction=.10,trustedResidualFraction=.12,minLocalImpulseFraction=.10)
  base['quality']=R.medir_qualidade(primary,fps,[])
  base['trackingReference']['stabilization']['contourMotion']='selected-headwear-top-motion-v4-supported'
+ base['trackingReference']['stabilization']['transitionDeshake']=dict(method=DESHAKE_METHOD,windowSeconds=DESHAKE_WINDOW)
+ stats['trajectoryDeshake']=dict(method=DESHAKE_METHOD,rows=sum(r['rows']for r in deshake_reports),transitions=sum(r['transitions']for r in deshake_reports),propagatedRows=sum(r['propagatedRows']for r in deshake_reports),maxCorrectionPixels=max([r['maxCorrectionPixels']for r in deshake_reports]or[0.]))
  if stats['headMissingMeasurements']:base['warnings'].append('Algumas leituras do contorno foram perdidas. O rosto selecionado mantém o movimento nesses intervalos; contornos propagados ficam identificados.')
  if progress:progress(.99,stats['decodedFrames'],stats['decodedFrames']/max(1e-6,time.perf_counter()-started))
  return base

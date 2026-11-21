@@ -33,6 +33,10 @@ O painel liga o motor sozinho na primeira análise. **Preparar motor** abre uma 
 
 Na versão 1.7.0 a análise ficou de 20% a 25% mais rápida, com o mesmo resultado quadro a quadro: o vídeo é lido por dois decodificadores que se alternam, a detecção de rosto roda numa etapa própria e a parte sem estado da medição da cabeça roda em paralelo, antes da etapa ordenada.
 
+Na versão 1.7.4 (motor 0.5.1) o rastreador ganhou uma guarda de identidade: todo rosto visto no mesmo quadro que a pessoa escolhida é acompanhado como outra pessoa e nunca assume o lugar dela, e a comparação de aparência passou a usar também a cabeça (cabelo, boné, chapéu), além do rosto e da roupa. Quando não dá para confirmar a pessoa, o motor registra a perda em vez de trocar. A mesma versão tira a tremida localizada (na passagem entre detector e fluxo óptico e nos quadros em que o contorno da cabeça vem do rosto) com um ajuste centrado que não atrasa o movimento.
+
+Na versão 1.7.5 (motor 0.5.2), foi corrigido o erro `list index out of range` na revisão de oclusões ao final do take e a seleção de origem que podia voltar indevidamente para Rosto.
+
 ## Interface
 
 <div align="center">
