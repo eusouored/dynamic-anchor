@@ -48,6 +48,12 @@ Na versão 1.7.5 (motor 0.5.2), foi corrigido o erro `list index out of range` n
 <p>Capturas com dados de demonstração · <a href="assets/interface-dark.png">Tema escuro</a> · <a href="assets/interface-light.png">Tema claro</a></p>
 </div>
 
+### Correções mantidas na versão 1.7.5
+
+O painel recupera a seleção ao voltar ao foco e, enquanto está visível e ocioso, confere a cada 2,5 segundos se o take mudou. A conferência não lê efeitos, keyframes ou mídia, nem exporta frames. A leitura completa só é pedida quando há mudança ou uma seleção incompleta. As consultas param durante operações, com o painel oculto e ao descarregar.
+
+A entrada do resultado também trata leituras reais de recuperação de perda que caem no mesmo quadro da sequência, como em mídia 59,94 fps numa sequência de 30 fps. Mantém a leitura válida mais próxima do quadro e preserva as coordenadas do trajeto. Leituras inválidas e duplicatas fora desse caso continuam sendo recusadas. O motor e os modelos permanecem os mesmos.
+
 ## Estrutura
 
 | Pasta | Conteúdo |

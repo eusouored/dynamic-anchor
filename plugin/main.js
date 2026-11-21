@@ -556,7 +556,10 @@
 
 
   if(native&&typeof setTimeout==='function')startup.onActive(()=>{
-    selectionWatcher=require('./selection-watch.js').watchSelection(require('premierepro'),{onChange:async isCurrent=>{await refreshSelection(isCurrent);if(isCurrent()&&window.AnchorBancada)await window.AnchorBancada.refresh();},onDirty:async()=>{if(busy)return;workflow.invalidateAll();if(masks.length){trajectoryNeedsConfirmation=true;controls();status('Projeto alterado. Aplicar usará o trajeto salvo; atualize a leitura se mudou a máscara.');}},onError:e=>log('SELEÇÃO: '+e.message)});
+    selectionWatcher=require('./selection-watch.js').watchSelection(require('premierepro'),{
+      canRefresh:()=>{const panel=$('bancada');return !panelDisposed&&startup.active&&!busy&&document.hidden!==true&&panel&&panel.clientWidth>0&&panel.clientHeight>0;},
+      needsRefresh:()=>selectionStamp===null||selectionLoading,
+      onChange:async isCurrent=>{await refreshSelection(isCurrent);if(isCurrent()&&window.AnchorBancada)await window.AnchorBancada.refresh();},onDirty:async()=>{if(busy)return;workflow.invalidateAll();if(masks.length){trajectoryNeedsConfirmation=true;controls();status('Projeto alterado. Aplicar usará o trajeto salvo; atualize a leitura se mudou a máscara.');}},onError:e=>log('SELEÇÃO: '+e.message)});
   });
 
   function notifySequenceFormat(){if(busy||!lastSelected)return;if(tools&&tools.selectionChanged(lastSelected,{formatChanged:true}))status('O formato da sequência mudou. Clique em Analisar rosto para tentar novamente.');controls();}

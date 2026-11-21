@@ -22,13 +22,23 @@ function validateRow(row,W=Infinity,H=Infinity,{recovered=false,hybrid=false}={}
  const b=row?.headBounds,p=row?.trackingPoint,sources=['segmented','interpolated',...(recovered?['gap']:[]),...(hybrid?['face-propagated']:[])],propagated=hybrid&&['face-propagated','gap'].includes(b?.source);
  if(!b||!p||![b.left,b.top,b.right,b.bottom,p.x,p.y].every(Number.isFinite)||b.left<(propagated?-W:0)||b.top<(propagated?-H:0)||b.right>(propagated?2*W:W)||b.bottom>(propagated?2*H:H)||b.right<=b.left||b.bottom<=b.top||!sources.includes(b.source)||Math.abs(p.x-(b.left+b.right)/2)>(b.right-b.left)*(hybrid ? .5 : .25)+1e-6||Math.abs(p.y-(b.top+b.bottom)/2)>(b.bottom-b.top)*(hybrid ? .5 : .25)+1e-6)throw Error('Contorno ou centro da cabeça inválidos.');return row;
 }
-function validateSamples(samples,times,selection,{fps,mediaFps}){
+function validateSamples(samples,times,selection,{fps,mediaFps,normalizeGaps=false}){
  if(!Array.isArray(samples)||samples.length<2||!Number.isFinite(mediaFps)||mediaFps<=0||!Number.isFinite(fps)||fps<=0)throw Error('Leituras reais do motor ausentes.');
- const frame=t=>Math.round((t-selection.inPoint)*fps),present=new Set(times.map(frame));
+ const frame=t=>Math.round((t-selection.inPoint)*fps),present=new Set(times.map(frame)),normalized=[];let sourceFrames=new Set();
  for(let i=0;i<samples.length;i++){
-  const s=samples[i];if(!s||![s.time,s.sourceTime].every(Number.isFinite)||!Number.isInteger(s.mediaFrame)||s.mediaFrame<0||!['detected','tracked'].includes(s.source)||s.time<selection.inPoint-1e-7||s.time>=selection.outPoint||s.sourceTime<selection.inPoint-.5/mediaFps-1e-7||s.sourceTime>=selection.outPoint||Math.abs((s.time-selection.inPoint)*fps-frame(s.time))>.01||Math.abs(s.time-s.sourceTime)>.5/fps+1e-7||Math.abs(s.sourceTime*mediaFps-s.mediaFrame)>.51||!present.has(frame(s.time))||(i&&s.time<=samples[i-1].time+1e-8))throw Error('Leitura analisada inválida ou repetida.');
+  const s=samples[i];if(!s||![s.time,s.sourceTime].every(Number.isFinite)||!Number.isInteger(s.mediaFrame)||s.mediaFrame<0||!['detected','tracked'].includes(s.source)||s.time<selection.inPoint-1e-7||s.time>=selection.outPoint||s.sourceTime<selection.inPoint-.5/mediaFps-1e-7||s.sourceTime>=selection.outPoint||Math.abs((s.time-selection.inPoint)*fps-frame(s.time))>.01||Math.abs(s.time-s.sourceTime)>.5/fps+1e-7||Math.abs(s.sourceTime*mediaFps-s.mediaFrame)>.51||!present.has(frame(s.time)))throw Error('Leitura analisada inválida ou repetida.');
+  const previous=samples[i-1];
+  if(previous&&s.time<=previous.time+1e-8){
+   // Two real gap-recovery reads can map to one sequence frame (e.g. 59.94 -> 30).
+   // Validate both reads above, then keep the closest one. Other duplicates remain invalid.
+   if(!normalizeGaps||Math.abs(s.time-previous.time)>1e-8||frame(s.time)!==frame(previous.time)||s.method!=='bidirectional-csrt-head-gap-v1'||previous.method!==s.method||s.source!=='tracked'||previous.source!=='tracked'||sourceFrames.has(s.mediaFrame))throw Error('Leitura analisada inválida ou repetida.');
+   sourceFrames.add(s.mediaFrame);const last=normalized[normalized.length-1];
+   if(Math.abs(s.sourceTime-s.time)<Math.abs(last.sourceTime-last.time))normalized[normalized.length-1]=s;
+  }else{sourceFrames=new Set([s.mediaFrame]);normalized.push(s);}
  }
- return samples;
+ if(normalized.length<2)throw Error('Leituras reais do motor ausentes.');
+ return normalizeGaps?normalized:samples;
 }
+const normalizeSamples=(samples,times,selection,options)=>validateSamples(samples,times,selection,{...options,normalizeGaps:true});
 function blend(a,b,u,source='gap'){if(!a&&!b)return undefined;if(!a||!b)throw Error('Contorno da cabeça ausente em um extremo da perda.');const out={source};for(const k of ['left','top','right','bottom'])out[k]=a[k]+(b[k]-a[k])*u;return out;}
-module.exports={METHOD,SAMPLED_METHOD,LEGACY_METHOD,SHA,isHead,isHybrid,isSampled,reference,sampledReference,validate,validateRow,validateSamples,blend};
+module.exports={METHOD,SAMPLED_METHOD,LEGACY_METHOD,SHA,isHead,isHybrid,isSampled,reference,sampledReference,validate,validateRow,validateSamples,normalizeSamples,blend};

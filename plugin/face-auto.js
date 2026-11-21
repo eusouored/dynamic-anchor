@@ -48,7 +48,7 @@ function verify(result,job,options={}){
   }
   const count=result.stats?.segments;
   if(primary>1||(count!==undefined&&(!Number.isInteger(count)||count<1||(result.segments!==undefined&&count!==1+auxiliaries))))throw new S.ServiceError('A lista de trechos não confere com o resultado do motor; refaça a análise. Nada foi aplicado.','invalid');
-  if(require('./head-reference.js').isSampled(result.trackingReference))require('./head-reference.js').validateSamples(result.analysisSamples,[...result.rows,...(result.segments||[]).filter(s=>!s.primary).flatMap(s=>s.rows)].map(r=>r.time),job.selection,{fps:result.fps,mediaFps:result.mediaFps});
+  if(require('./head-reference.js').isSampled(result.trackingReference))result.analysisSamples=require('./head-reference.js').normalizeSamples(result.analysisSamples,[...result.rows,...(result.segments||[]).filter(s=>!s.primary).flatMap(s=>s.rows)].map(r=>r.time),job.selection,{fps:result.fps,mediaFps:result.mediaFps});
   return result;
 }
 function describe(task,job){
