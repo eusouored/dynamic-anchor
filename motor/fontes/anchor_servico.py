@@ -26,6 +26,19 @@ import time
 import traceback
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from anchor_lifecycle import PremiereLifetime, METHOD as LIFETIME_METHOD
+
+# Capture the original host before importing the heavier runtime. A Premiere
+# opened later must not adopt a service whose original owner has already exited.
+_STARTUP_LIFETIME = None
+if __name__ == '__main__' and (len(sys.argv) < 2 or sys.argv[1] not in ('--versao', '--diagnostico', '--preparar')):
+    try:
+        _STARTUP_LIFETIME = PremiereLifetime()
+        if _STARTUP_LIFETIME.should_stop():
+            _STARTUP_LIFETIME.close()
+            sys.exit(5)
+    except OSError:
+        sys.exit(5)
 
 PASTA = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, PASTA)
@@ -256,6 +269,7 @@ class Servico:
         self.lock = threading.Lock()
         self.ativa = None
         self.parar = threading.Event()
+        self.lifetime = None
 
     def status(self):
         with self.lock:
@@ -267,7 +281,7 @@ class Servico:
             references.append('video15')
         return {'service': 'anchor-rosto', 'api': API, 'version': VERSAO_SERVICO, 'engine': R.MOTOR,
                 'busy': ativa is not None, 'task': ativa, 'pid': os.getpid(),
-                'features': ['rostos', 'diagnostico', 'qualidade', 'adaptive-center-v1'] + (['whole-head-v1'] if whole_head else []), 'references': references,
+                'features': ['rostos', 'diagnostico', 'qualidade', 'adaptive-center-v1'] + (['whole-head-v1'] if whole_head else []) + ([LIFETIME_METHOD] if self.lifetime is not None else []), 'references': references,
                 'samplingModes': ['normal', 'fast', 'ultra'] if 'adaptativo' in references or 'video15' in references else []}
 
     def iniciar(self, corpo):
@@ -429,6 +443,12 @@ class Servico:
             tarefa.mensagem = 'Cancelando…'
         return tarefa.resumo()
 
+    def encerrar(self):
+        with self.lock:
+            if self.ativa and self.ativa.estado in ('queued', 'running'):
+                self.ativa.cancelar.set()
+        self.parar.set()
+
 
 def origem_permitida(origem):
     # Páginas da web enviam Origin http(s). O painel UXP não é uma página web.
@@ -566,7 +586,7 @@ def criar_manipulador(servico):
                     return self._responder(200, servico.cancelar(partes[2]))
                 if partes == ['v1', 'encerrar']:
                     self._responder(200, {'ok': True})
-                    servico.parar.set()
+                    servico.encerrar()
                     return
                 self._responder(404, {'error': 'Rota desconhecida.'})
             except ErroPedido as erro:
@@ -632,35 +652,50 @@ def pedir_desempenho():
         return 'não aplicado: %s' % erro
 
 
-def servir(porta=PORTA, servico=None, espera_porta=6.0):
+def servir(porta=PORTA, servico=None, espera_porta=6.0, lifetime=None):
     global DADOS
     DADOS = pasta_dados()
-    registrar('DESEMPENHO: %s' % pedir_desempenho())
-    servico = servico or Servico()
-    fim = time.time() + espera_porta
-    while True:
-        try:
-            httpd = Servidor(('127.0.0.1', porta), criar_manipulador(servico))
-            break
-        except OSError:
-            if ja_rodando(porta):
-                registrar('Já em execução; nada a fazer.')
-                return 0
-            if time.time() >= fim:
-                registrar('ERRO: porta %d ocupada por outro programa.' % porta)
-                return 4
-            time.sleep(0.5)  # uma versão anterior pode estar terminando de liberar a porta
-    registrar('PRONTO: motor %s em 127.0.0.1:%d (pid %d)' % (VERSAO_SERVICO, porta, os.getpid()))
-    threading.Thread(target=httpd.serve_forever, daemon=True).start()
     try:
-        while not servico.parar.wait(0.5):
-            pass
-    except KeyboardInterrupt:
-        pass
-    httpd.shutdown()
-    httpd.server_close()
-    registrar('ENCERRADO')
-    return 0
+        lifetime = lifetime if lifetime is not None else PremiereLifetime()
+    except OSError:
+        registrar('ERRO: monitor do Premiere indisponível; motor não iniciado.')
+        return 5
+    try:
+        registrar('DESEMPENHO: %s' % pedir_desempenho())
+        servico = servico or Servico()
+        servico.lifetime = lifetime
+        if lifetime.should_stop():
+            registrar('ENCERRADO: ' + str(lifetime.reason))
+            return 5
+        fim = time.time() + espera_porta
+        while True:
+            try:
+                httpd = Servidor(('127.0.0.1', porta), criar_manipulador(servico))
+                break
+            except OSError:
+                if ja_rodando(porta):
+                    registrar('Já em execução; nada a fazer.')
+                    return 0
+                if time.time() >= fim:
+                    registrar('ERRO: porta %d ocupada por outro programa.' % porta)
+                    return 4
+                time.sleep(0.5)
+        registrar('PRONTO: motor %s em 127.0.0.1:%d (pid %d); proteção %s' % (VERSAO_SERVICO, porta, os.getpid(), LIFETIME_METHOD))
+        threading.Thread(target=httpd.serve_forever, daemon=True).start()
+        try:
+            while not servico.parar.wait(0.5):
+                if lifetime.should_stop():
+                    registrar('ENCERRANDO: ' + str(lifetime.reason))
+                    servico.encerrar()
+        except KeyboardInterrupt:
+            servico.encerrar()
+        finally:
+            httpd.shutdown()
+            httpd.server_close()
+        registrar('ENCERRADO')
+        return 0
+    finally:
+        lifetime.close()
 
 
 def _http(caminho, corpo=None, porta=PORTA, tempo=2.0):
@@ -821,7 +856,7 @@ def principal(argv):
         if sys.stdout is not None:
             print(VERSAO_SERVICO)
         return 0
-    return servir()
+    return servir(lifetime=_STARTUP_LIFETIME)
 
 
 if __name__ == '__main__':

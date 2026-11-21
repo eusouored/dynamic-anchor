@@ -52,7 +52,15 @@ Na versão 1.7.5 (motor 0.5.2), foi corrigido o erro `list index out of range` n
 
 O painel recupera a seleção ao voltar ao foco e, enquanto está visível e ocioso, confere a cada 2,5 segundos se o take mudou. A conferência não lê efeitos, keyframes ou mídia, nem exporta frames. A leitura completa só é pedida quando há mudança ou uma seleção incompleta. As consultas param durante operações, com o painel oculto e ao descarregar.
 
-A entrada do resultado também trata leituras reais de recuperação de perda que caem no mesmo quadro da sequência, como em mídia 59,94 fps numa sequência de 30 fps. Mantém a leitura válida mais próxima do quadro e preserva as coordenadas do trajeto. Leituras inválidas e duplicatas fora desse caso continuam sendo recusadas. O motor e os modelos permanecem os mesmos.
+A entrada do resultado também trata leituras reais de recuperação de perda que caem no mesmo quadro da sequência, como em mídia 59,94 fps numa sequência de 30 fps. Mantém a leitura válida mais próxima do quadro e preserva as coordenadas do trajeto. Leituras inválidas e duplicatas fora desse caso continuam sendo recusadas. Os algoritmos de rastreamento e os modelos permanecem os mesmos.
+
+### Proteções de inicialização e encerramento
+
+Ao restaurar a área de trabalho, o painel aguarda um clique ou uma tecla dentro dele. Passar o mouse, receber foco ou simplesmente abrir o Premiere não ativa as consultas de seleção ou de status. A conferência de seleção não inicia o motor.
+
+O motor só é iniciado por uma ação explícita, como Analisar rosto, Iniciar motor ou Preparar motor. O serviço observa os processos do Premiere presentes na sua sessão do Windows quando inicia. Quando todas as instâncias vinculadas encerram, ele cancela o trabalho em andamento, fecha a conexão local e termina, inclusive se o Premiere sair inesperadamente. Não depende de uma mensagem de fechamento enviada pelo painel ou de contatos periódicos pela rede. Sem um Premiere aberto ou sem conseguir monitorá-lo, o serviço não inicia. Abra o Premiere antes de ligar ou preparar o motor.
+
+A revisão continua em 1.7.5 / motor 0.5.2. O painel exige a proteção `premiere-process-lifetime-v1` para aceitar o motor; uma cópia anterior, mesmo numerada 0.5.2, precisa ser substituída. Os algoritmos de rastreamento e os modelos foram preservados.
 
 ## Estrutura
 

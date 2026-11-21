@@ -72,6 +72,7 @@ function checkStatus(status,reference){
   if(!status||status.service!=='anchor-rosto'||status.api!==API||status.engine!==ENGINE)
     throw new ServiceError('Outro programa está usando a porta '+PORT+' do motor de rosto.','incompatible');
   if(compareVersion(status.version,MIN_VERSION)<0)throw new ServiceError('Motor de rosto '+status.version+' desatualizado; é necessário '+MIN_VERSION+' ou mais novo.','outdated');
+  if(!Array.isArray(status.features)||!status.features.includes('premiere-process-lifetime-v1'))throw new ServiceError('Este motor não tem a proteção de encerramento com o Premiere. Atualize o painel e o motor juntos.','outdated');
   if(!supportsReference(status,reference))throw new ServiceError('Este motor não tem o método de análise necessário. Clique em Preparar motor para atualizá-lo e tente de novo.','unsupported-reference');
   return status;
 }

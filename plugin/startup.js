@@ -3,7 +3,9 @@
 function createStartupGate(doc){
   let active=false,disposed=false;
   const waiting=new Set();
-  const events=['mousedown','keydown','mouseover'];
+  // Hover can be generated while a saved workspace is being restored.
+  // Only a deliberate click or key inside the panel permits native reads.
+  const events=['mousedown','keydown'];
   function detach(){for(const event of events)doc.removeEventListener(event,activate,true);}
   function activate(){
     if(active||disposed)return;

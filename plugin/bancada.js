@@ -140,6 +140,6 @@
  window.addEventListener('resize',reflow);
  window.addEventListener('unload',()=>{closed=true;epoch++;clearInterval(timer);discard();});
  api.selectTrackingSource(source);sync();
- $('bFirstMessage').textContent='Selecione um take e clique em Atualizar seleção.';
+ $('bFirstMessage').textContent='Selecione um take e clique neste painel para ativar a leitura.';
  // main.js starts the selection watcher on activation; it also refreshes this preview.
 })();

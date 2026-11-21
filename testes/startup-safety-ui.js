@@ -1,0 +1,21 @@
+'use strict';
+const assert=require('assert/strict'),fs=require('fs'),path=require('path'),{launch,open}=require('./harness');
+(async()=>{const browser=await launch(),checks=[];try{
+ const {page,errors}=await open(browser,{width:470,height:835,selection:'single',status:'ready',activate:false});
+ await page.evaluate(()=>{const e=require('./engine.js').createEngine(),original=e.selections;__test.selectionReads=0;e.selections=async(...args)=>{__test.selectionReads++;return original(...args);};});
+ await page.mouse.move(200,300);
+ await page.evaluate(()=>{window.dispatchEvent(new Event('focus'));document.dispatchEvent(new Event('visibilitychange'));});
+ await page.waitForTimeout(3000);
+ let result=await page.evaluate(()=>({reads:__test.selectionReads,requests:__test.requests.length,launches:__test.launches.length}));
+ assert.deepEqual(result,{reads:0,requests:0,launches:0});checks.push('restauração, hover e foco não iniciam leituras, rede ou motor');
+ await page.mouse.click(120,85);
+ await page.waitForFunction(()=>__test.selectionReads>0&&__test.requests.includes('status'));
+ result=await page.evaluate(()=>({launches:__test.launches.length,writes:__test.hostWrites.length}));
+ assert.deepEqual(result,{launches:0,writes:0});checks.push('clique explícito libera seleção e consulta de status sem iniciar motor ou aplicar efeito');
+ await page.evaluate(()=>document.getElementById('bancada').style.display='none');await page.waitForTimeout(200);
+ const before=await page.evaluate(()=>__test.selectionReads);await page.waitForTimeout(3000);
+ assert.equal(await page.evaluate(()=>__test.selectionReads),before);checks.push('painel oculto não relê seleção');
+ assert.deepEqual(errors,[]);checks.push('sem erro JavaScript');
+ if(process.argv[2])fs.writeFileSync(path.resolve(process.argv[2]),JSON.stringify({checks,errors},null,2));
+ console.log(JSON.stringify({checks,passed:checks.length}));await page.close();
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
