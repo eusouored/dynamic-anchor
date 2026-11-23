@@ -1,4 +1,13 @@
 'use strict';
+// 1.7.6: uma chamada do Premiere que nunca responde (exportar o quadro da prévia enquanto
+// o clipe é arrastado, por exemplo) não pode prender o painel. A espera tem limite; o que
+// chegar depois é descartado pelas conferências de seleção atual de quem chamou.
+const HOST_LIMIT_MS=15000;
+function bounded(promise,ms,message,schedule=setTimeout,unschedule=clearTimeout){
+  let timer=null;
+  const limit=new Promise((_,reject)=>{timer=schedule(()=>{timer=null;const error=new Error(message);error.code='host-timeout';reject(error);},ms);});
+  return Promise.race([Promise.resolve(promise),limit]).finally(()=>{if(timer!==null)unschedule(timer);});
+}
 // A small selection fingerprint: no effects, keyframes, media reads or frame exports.
 async function selectionStamp(ppro){
   const project=await ppro.Project.getActiveProject();if(!project)return 'no-project';
@@ -13,17 +22,23 @@ async function selectionStamp(ppro){
   return JSON.stringify([String(project.guid||project.path||''),String(seq.guid),clips.map(c=>JSON.stringify(c)).sort()]);
 }
 function watchSelection(ppro,{onChange,onDirty,onError=()=>{},delay=150,schedule=setTimeout,unschedule=clearTimeout,
-  canRefresh=()=>true,needsRefresh=()=>false,probe=()=>selectionStamp(ppro),recoveryMs=2500,
+  canRefresh=()=>true,needsRefresh=()=>false,probe=()=>selectionStamp(ppro),recoveryMs=2500,hostLimitMs=HOST_LIMIT_MS,
   repeat=setInterval,stopRepeat=clearInterval,target=typeof window==='undefined'?null:window,doc=typeof document==='undefined'?null:document}={}){
-  const manager=ppro.EventManager,c=ppro.Constants;let timer=null,disposed=false,revision=0,running=false,pending=false;
+  const manager=ppro.EventManager,c=ppro.Constants;let timer=null,disposed=false,revision=0,running=false,pending=false,stalled=false;
   const listeners=[];
   const queue=()=>{if(timer!==null)unschedule(timer);timer=schedule(flush,delay);};
+  // O limite usa o relógio real; schedule/unschedule ficam só para o agrupamento dos eventos.
+  const wait=(promise,what)=>hostLimitMs>0?bounded(promise,hostLimitMs,'O Premiere não respondeu à '+what+' em '+Math.round(hostLimitMs/1000)+' s. O painel segue acompanhando a seleção.'):promise;
+  // Avisa uma vez por sequência de esperas esgotadas; a próxima leitura que responder zera o aviso.
+  const failed=e=>{if(disposed)return;if(e&&e.code==='host-timeout'){if(stalled)return;stalled=true;}onError(e);};
   async function flush(){
     timer=null;if(disposed)return;
     if(!canRefresh()){pending=true;return;}
     if(running){pending=true;return;}
     running=true;pending=false;const current=revision;
-    try{await onChange(()=>!disposed&&revision===current);}catch(e){if(!disposed)onError(e);}
+    // Esgotada a espera, a leitura presa continua sozinha: se nada mudou, ela ainda vale
+    // quando responder; se a seleção mudou, a revisão nova a invalida.
+    try{await wait(onChange(()=>!disposed&&revision===current),'leitura da seleção');stalled=false;}catch(e){failed(e);}
     finally{running=false;if(pending&&!disposed)queue();}
   }
   const changed=()=>{if(disposed)return;revision++;pending=true;if(!running)queue();};
@@ -35,11 +50,11 @@ function watchSelection(ppro,{onChange,onDirty,onError=()=>{},delay=150,schedule
     if(disposed||running||probing||!canRefresh())return;
     const current=revision;probing=true;
     try{
-      const next=await probe();
+      const next=await wait(probe(),'conferência da seleção');
       if(disposed||current!==revision||!canRefresh())return;
       probeError=null;
       if(force||pending||needsRefresh()||next!==lastStamp){lastStamp=next;changed();}
-    }catch(e){if(!disposed&&String(e.message)!==probeError){probeError=String(e.message);onError(e);}}
+    }catch(e){if(!disposed&&String(e.message)!==probeError){probeError=String(e.message);failed(e);}}
     finally{probing=false;}
   }
   const resume=()=>{recover(true);};
@@ -50,4 +65,4 @@ function watchSelection(ppro,{onChange,onDirty,onError=()=>{},delay=150,schedule
   changed();
   return {supported:listeners.length>0,refresh:changed,recover,dispose(){if(disposed)return;disposed=true;revision++;if(timer!==null)unschedule(timer);if(recoveryTimer!==null)stopRepeat(recoveryTimer);if(target?.removeEventListener)target.removeEventListener('focus',resume);if(doc?.removeEventListener)doc.removeEventListener('visibilitychange',resume);for(const [event,fn]of listeners)try{manager.removeGlobalEventListener(event,fn,false);}catch(e){onError(e);}listeners.length=0;}};
 }
-module.exports={watchSelection,selectionStamp};
+module.exports={watchSelection,selectionStamp,bounded,HOST_LIMIT_MS};

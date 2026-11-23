@@ -34,6 +34,12 @@ def selected_labels(labels, crop, row, allow_border_rejection=True):
      for face in others:
       fx,fy,fw,fh=[face[k]for k in ('x','y','width','height')]
       if np.hypot((fx-x)/w,(fy-y)/h)<.4 and .6<fw/w<1.7:continue
-      rival=((px-fx)/(.75*fw))**2+((py-(fy-.15*fh))/(.85*fh))**2
-      out[(rival+.15<selected)&(rival<1.5)&~protected]=0
+      # Compare both seeds in one metric. Normalizing each person's distance
+      # by their own box lets a larger foreground face absorb the smaller
+      # person's hair, especially above both faces.
+      rival=((px-fx)/(.75*w))**2+((py-(fy-.15*fh))/(.85*h))**2
+      # Semantic labels can connect both people's hair outside the facial
+      # ellipse. Assign the whole crop competitively, including that bridge.
+      # Keep the selected facial core and the duplicate-detection exception.
+      out[(rival+.15<selected)&~protected]=0
     return out

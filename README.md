@@ -22,6 +22,31 @@ Baixe o instalador na [versão mais recente](https://github.com/eusouored/dynami
 
 Requisitos: Windows 10 ou 11 (64 bits) e Premiere Pro 26 ou mais novo. A GPU é usada pelo modelo de cabeça (DirectML) quando disponível; sem ela, o motor usa a CPU.
 
+## Interface
+
+<div align="center">
+<picture>
+  <source media="(prefers-color-scheme: light)" srcset="assets/interface-light.png">
+  <img alt="Painel do Dynamic Anchor com o alvo, os controles de zoom e a suavização." src="assets/interface-dark.png" width="430">
+</picture>
+<p><em>Ajuste a posição do alvo, o zoom e a suavização antes de aplicar o rastreamento.</em></p>
+<p>Capturas com dados de demonstração · <a href="assets/interface-dark.png">Tema escuro</a> · <a href="assets/interface-light.png">Tema claro</a></p>
+</div>
+
+### Correções anteriores preservadas
+
+O painel recupera a seleção ao voltar ao foco e, enquanto está visível e ocioso, confere a cada 2,5 segundos se o take mudou. A conferência não lê efeitos, keyframes ou mídia, nem exporta frames. A leitura completa só é pedida quando há mudança ou uma seleção incompleta. As consultas param durante operações, com o painel oculto e ao descarregar.
+
+A entrada do resultado também trata leituras reais de recuperação de perda que caem no mesmo quadro da sequência, como em mídia 59,94 fps numa sequência de 30 fps. Mantém a leitura válida mais próxima do quadro e preserva as coordenadas do trajeto. Leituras inválidas e duplicatas fora desse caso continuam sendo recusadas. Os algoritmos de rastreamento e os modelos permanecem os mesmos.
+
+### Proteções de inicialização e encerramento
+
+Ao restaurar a área de trabalho, o painel aguarda um clique ou uma tecla dentro dele. Passar o mouse, receber foco ou simplesmente abrir o Premiere não ativa as consultas de seleção ou de status. A conferência de seleção não inicia o motor.
+
+O motor só é iniciado por uma ação explícita, como Analisar rosto, Iniciar motor ou Preparar motor. O serviço observa os processos do Premiere presentes na sua sessão do Windows quando inicia. Quando todas as instâncias vinculadas encerram, ele cancela o trabalho em andamento, fecha a conexão local e termina, inclusive se o Premiere sair inesperadamente. Não depende de uma mensagem de fechamento enviada pelo painel ou de contatos periódicos pela rede. Sem um Premiere aberto ou sem conseguir monitorá-lo, o serviço não inicia. Abra o Premiere antes de ligar ou preparar o motor.
+
+A revisão continua em 1.7.5 / motor 0.5.2. O painel exige a proteção `premiere-process-lifetime-v1` para aceitar o motor; uma cópia anterior, mesmo numerada 0.5.2, precisa ser substituída. Os algoritmos de rastreamento e os modelos foram preservados.
+
 ## Como funciona
 
 | Parte | O que faz |
@@ -35,20 +60,11 @@ Na versão 1.7.0 a análise ficou de 20% a 25% mais rápida, com o mesmo resulta
 
 Na versão 1.7.4 (motor 0.5.1) o rastreador ganhou uma guarda de identidade: todo rosto visto no mesmo quadro que a pessoa escolhida é acompanhado como outra pessoa e nunca assume o lugar dela, e a comparação de aparência passou a usar também a cabeça (cabelo, boné, chapéu), além do rosto e da roupa. Quando não dá para confirmar a pessoa, o motor registra a perda em vez de trocar. A mesma versão tira a tremida localizada (na passagem entre detector e fluxo óptico e nos quadros em que o contorno da cabeça vem do rosto) com um ajuste centrado que não atrasa o movimento.
 
-Na versão 1.7.5 (motor 0.5.2), foi corrigido o erro `list index out of range` na revisão de oclusões ao final do take e a seleção de origem que podia voltar indevidamente para Rosto.
+Na versão 1.7.6, a exportação da prévia foi separada do acompanhamento da seleção para evitar que uma miniatura sem resposta bloqueie a troca de take. A prévia do primeiro quadro é exportada à parte, com limite de 12 segundos, e a leitura e a conferência da seleção têm limite de 15 segundos. Uma espera esgotada fica no registro do painel, e a troca de take seguinte é reconhecida normalmente.
 
-## Interface
+Quando não há nenhuma leitura confiável da cabeça inteira, o motor 0.5.3 mantém o trajeto do rosto escolhido e mostra um aviso. Se o ponto do rosto sai da imagem, usa o maior trecho em que a referência permanece dentro do quadro e informa a cobertura correspondente.
 
-<div align="center">
-<picture>
-  <source media="(prefers-color-scheme: light)" srcset="assets/interface-light.png">
-  <img alt="Painel do Dynamic Anchor com o alvo, os controles de zoom e a suavização." src="assets/interface-dark.png" width="430">
-</picture>
-<p><em>Ajuste a posição do alvo, o zoom e a suavização antes de aplicar o rastreamento.</em></p>
-<p>Capturas com dados de demonstração · <a href="assets/interface-dark.png">Tema escuro</a> · <a href="assets/interface-light.png">Tema claro</a></p>
-</div>
-
-### Correções mantidas na versão 1.7.5
+### Correções anteriores preservadas
 
 O painel recupera a seleção ao voltar ao foco e, enquanto está visível e ocioso, confere a cada 2,5 segundos se o take mudou. A conferência não lê efeitos, keyframes ou mídia, nem exporta frames. A leitura completa só é pedida quando há mudança ou uma seleção incompleta. As consultas param durante operações, com o painel oculto e ao descarregar.
 
@@ -135,9 +151,3 @@ Os componentes de terceiros mantêm as próprias licenças (lista completa em `p
 - **Modelo de segmentação de cabeça:** o código de origem é MIT, mas os pesos foram treinados no conjunto de dados CelebAMask-HQ, cujos termos restringem o uso a pesquisa e educação, sem fins comerciais. Sem esse modelo, o motor usa a referência do rosto (sem cabeça inteira).
 
 Adobe e Premiere Pro são marcas da Adobe. Este é um projeto independente, sem afiliação nem endosso da Adobe.
-
-## Outros plugins Dynamic
-
-[Dynamic Cut](https://github.com/eusouored/dynamic-cut) · [Dynamic Captions](https://github.com/eusouored/dynamic-captions)
-
-<sub>Projeto independente para Adobe Premiere Pro.</sub>

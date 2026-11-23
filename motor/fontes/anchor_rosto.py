@@ -57,7 +57,7 @@ def _limitar_threads_opencv(cv2_module, max_threads=MAX_THREADS_OPENCV):
 # process requests concurrently. Apply the tested host cap exactly once here.
 OPENCV_THREADS_AT_STARTUP = _limitar_threads_opencv(cv2)
 
-VERSAO_MOTOR = '0.5.2'
+VERSAO_MOTOR = '0.5.3'
 # Epoch do RESULTADO, separado da versão empacotada e da execução paralela.
 # BUMPAR o epoch correspondente sempre que modelo, pixels/pré-processamento,
 # detecção, associação, interpolação, grade ou referência mudarem os dados.
@@ -68,6 +68,8 @@ EPOCAS_ANALISE = {k: v + '+identity-guard-0.5.1' for k, v in {
     'caixa': '0.4.3-box-linear-v1', 'media5': '0.4.3-mean5-linear-v1', 'video15': '0.4.3',
     'adaptativo': '0.4.4-guarded-handoff-v1', 'cabeca': '0.4.4-cap-reacquisition-handoff-v1+deshake-v1'}.items()}
 VERSAO_INSTRUMENTACAO = 1
+EPOCAS_ANALISE['cabeca'] += '+instance-crop-separation-v1'
+EPOCAS_ANALISE['cabeca'] += '+face-reference-fallback-0.5.3'
 FORMATO = 'anchor-face-track'
 MOTOR = 'face-yunet-v1'
 PASTA = os.path.dirname(os.path.abspath(__file__))

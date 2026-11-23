@@ -77,7 +77,8 @@ def execute(job,options,progress=None,cancelled=None,inform=None,measure=True):
    if o.get('otherFaces'):groups[g][i]['otherFaces']=o['otherFaces']
   result=H.finish_head(job,options,progress,started,model_ready,face_done,base,groups,measurements,base['stats']['step'],base['fps'],plan,accepted,head_seconds,parser,base['mediaFps'],cancelled)
   visual_started=time.perf_counter();visual_seconds=0.
-  if visual is not None:
+  # 0.5.3: o trajeto do rosto (sem cabeça) não passa pela continuidade visual, que corrige contornos de cabeça.
+  if visual is not None and 'headFallback' not in result['trackingReference']:
    if any(row.get('headMotion') for group in [result['rows']]+[s['rows'] for s in result.get('segments',[]) if not s.get('primary')] for row in group):visual.disable('headwear-reference-protected')
    elif any(item.get('accepted') for item in result['stats'].get('headReferenceRepair',[])):visual.disable('existing-reference-repair-protected')
    visual.finalize(result)

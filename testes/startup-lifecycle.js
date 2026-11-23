@@ -8,8 +8,9 @@ await test('an explicit click activates once',async()=>{const t=fixture();t.fire
 await test('keyboard interaction activates once',async()=>{const t=fixture();t.fire('keydown');await Promise.resolve();assert.equal(t.calls,1);t.gate.dispose();});
 await test('closing before an activation callback prevents native work',async()=>{const t=fixture();t.fire('mousedown');t.gate.dispose();await Promise.resolve();assert.equal(t.calls,0);assert.equal(t.gate.active,false);assert.equal(t.map.size,0);});
 await test('a later callback does not bypass a disposed gate',async()=>{const t=fixture();t.gate.dispose();t.gate.onActive(()=>{throw Error('late native read');});await Promise.resolve();assert.equal(t.calls,0);});
-const base={service:'anchor-rosto',api:1,version:'0.5.2',engine:'face-yunet-v1'};
+const base={service:'anchor-rosto',api:1,version:S.MIN_VERSION,engine:'face-yunet-v1'};
 await test('same-version legacy engine without lifetime protection requires replacement',async()=>{assert.throws(()=>S.checkStatus(base),e=>e.code==='outdated');});
-await test('protected same-version engine remains compatible',async()=>{assert.equal(S.checkStatus({...base,features:['premiere-process-lifetime-v1']}).version,'0.5.2');});
+await test('protected same-version engine remains compatible',async()=>{assert.equal(S.checkStatus({...base,features:['premiere-process-lifetime-v1']}).version,S.MIN_VERSION);});
+await test('an older protected engine requires replacement',async()=>{assert.throws(()=>S.checkStatus({...base,version:'0.5.2',features:['premiere-process-lifetime-v1']}),e=>e.code==='outdated');});
 console.log(passed+' startup/lifecycle tests passed');
 })().catch(e=>{console.error(e);process.exitCode=1;});

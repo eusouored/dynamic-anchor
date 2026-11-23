@@ -41,14 +41,15 @@ class HeadParser:
   self.input=self.session.get_inputs()[0].name
   import threading
   self._local=threading.local();self._run_lock=threading.Lock()
+  self.instance_checks=dict(checked=0,isolated=0,rejected=0)
   self._mean=np.array([.485,.456,.406],np.float32);self._std=np.array([.229,.224,.225],np.float32)
  def reset(self):self.contour.reset()
  def runtime_info(self):
   return dict(provider=self.provider,providers=self.session.get_providers(),labelsOutput=self.labels_output,graphSha256=LABEL_MODEL_SHA if self.labels_output else MODEL_SHA,fallback=self.runtime_fallback,inputShape=self.session.get_inputs()[0].shape,configuration='fixed-nospin' if self.provider=='DmlExecutionProvider' else 'cpu-default',cpuPartitionsAllowed=self.provider=='DmlExecutionProvider',nodePlacementVerified=False)
- def infer(self,image,row):
+ def infer(self,image,row,crop_scale=1.):
   """Model stage only (crop, resize, normalize, run). Holds no tracking state,
   so it can run one read ahead of detect() on another thread."""
-  H,W=image.shape[:2];x,y,w,h=[row[k]for k in ('x','y','width','height')];side=max(w*2.7,h*2.5)
+  H,W=image.shape[:2];x,y,w,h=[row[k]for k in ('x','y','width','height')];side=max(w*2.7,h*2.5)*crop_scale
   x0,y0=max(0,int(x-side/2)),max(0,int(y-h*.35-side/2));x1,y1=min(W,int(x+side/2)),min(H,int(y-h*.35+side/2));crop=image[y0:y1,x0:x1]
   if crop.size==0:return None
   rgb8=cv2.cvtColor(cv2.resize(crop,(512,512),interpolation=cv2.INTER_LINEAR),cv2.COLOR_BGR2RGB)
@@ -76,7 +77,18 @@ class HeadParser:
   recomputes these measurements if the state differs when it runs."""
   inferred=self.infer(image,row)
   if inferred is None:return NO_CROP
-  return self._measure(inferred,row,self.contour.headwear is not True)
+  allow=self.contour.headwear is not True
+  prepared=self._measure(inferred,row,allow)
+  if competing_bounds(prepared['bounds'],row):
+   tighter=self.infer(image,row,crop_scale=.8)
+   alternate=self._measure(tighter,row,allow)if tighter is not None else None
+   choice=instance_consensus(prepared,alternate,row)
+   with self._run_lock:
+    self.instance_checks['checked']+=1
+    self.instance_checks['rejected'if choice is None else'isolated']+=1
+   if choice is None:prepared={**prepared,'bounds':None,'component':None,'instanceRejected':True}
+   else:prepared=choice
+  return prepared
  def _measure(self,inferred,row,allow):
   labels,crop,rgb8=inferred
   from anchor_instances import selected_labels
@@ -88,12 +100,11 @@ class HeadParser:
  def detect(self,image,row,prepared=None):
   self.visual_hair_count=0
   allow=self.contour.headwear is not True
-  if prepared is None:
-   inferred=self.infer(image,row)
-   if inferred is None:return None
-   prepared=self._measure(inferred,row,allow)
-  elif prepared is NO_CROP:return None
-  elif prepared['allow']!=allow:prepared=self._measure(prepared['inferred'],row,allow)
+  if prepared is None:prepared=self.prepare(image,row)
+  if prepared is NO_CROP:return None
+  if prepared['allow']!=allow:
+   rejected=prepared.get('instanceRejected',False);prepared=self._measure(prepared['inferred'],row,allow)
+   if rejected:prepared['bounds']=None
   labels,(x0,y0,x1,y1)=prepared['labels'],prepared['inferred'][1]
   if getattr(self,'visual_enabled',False):self.visual_hair_count=prepared['hair']
   self.visibility=prepared['visibility']
@@ -103,6 +114,25 @@ class HeadParser:
    if self.contour.motion is not None:bounds={**bounds,'_motion':copy.deepcopy(self.contour.motion)}
    bounds['_visibility']=self.visibility
   return bounds
+
+def competing_bounds(bounds,row):
+ if bounds is None:return False
+ for face in row.get('otherFaces')or[]:
+  if np.hypot((face['x']-row['x'])/row['width'],(face['y']-row['y'])/row['height'])<.4 and .6<face['width']/row['width']<1.7:continue
+  if bounds['left']<face['x']<bounds['right'] and bounds['top']<face['y']<bounds['bottom']:return True
+ return False
+
+def instance_consensus(original,alternate,row):
+ """A competing head needs a complete independently separated crop.
+
+ Even two agreeing semantic crops can repeat the same merged head. When the
+ tighter contour still covers the detected rival's facial center, the whole
+ head is ambiguous (including genuine overlap in depth). Defer to the existing
+ selected-face head-loss reconstruction instead of publishing that contour.
+ """
+ if alternate is None or alternate['bounds'] is None:return None
+ if not competing_bounds(alternate['bounds'],row):return alternate
+ return None
 
 def measure_visibility(labels,crop,row):
  x0,y0,x1,y1=crop;mh,mw=labels.shape;x,y,w,h=[row[k]for k in ('x','y','width','height')]
@@ -263,11 +293,51 @@ def execute_head_two_pass(job,options,progress,cancelled,inform,measure):
  if cancelled():raise R.Cancelado('Análise cancelada.')
  return finish_head(job,options,progress,started,model_ready,face_done,base,groups,measurements,step,fps,plan,accepted,head_seconds,parser,mfps,cancelled)
 
+FACE_FALLBACK_METHOD='selected-face-reference-fallback-v1'
+FACE_FALLBACK_WARNING='A cabeça inteira não foi reconhecida neste trecho (close-up, cabeça cortada pelo quadro, rosto de perfil ou para cima). O enquadramento segue o rosto escolhido.'
+
+def face_reference_fallback(base,plan,accepted,head_seconds,started,model_ready,face_done,head_done):
+ """0.5.3: nenhuma leitura confiável da cabeça em todo o trecho. Em vez de recusar a análise,
+ entrega o trajeto do rosto escolhido (referência adaptativa já validada) com aviso explícito."""
+ import anchor_rosto as R
+ ref=base.get('trackingReference')
+ # Só o trajeto adaptativo do rosto, com sua própria validação, pode substituir a cabeça.
+ if not isinstance(ref,dict) or ref.get('method')!='selected-face-center-v1' or len(base.get('rows') or [])<2:
+  raise R.ErroMotor('Não foi possível reconhecer a cabeça inteira deste alvo com segurança. Nenhum rastreamento foi aplicado.')
+ # O painel recusa ponto do rosto fora da imagem (pessoa saindo pela lateral): fica o maior trecho dentro do quadro.
+ rows,W,H=base['rows'],base.get('width'),base.get('height')
+ def inside(row):
+  p=row.get('trackingPoint')
+  return bool(p) and W is not None and H is not None and 0<=p['x']<=W and 0<=p['y']<=H
+ best=(0,0);i=0
+ while i<len(rows):
+  if inside(rows[i]):
+   j=i
+   while j<len(rows) and inside(rows[j]):j+=1
+   if j-i>best[1]-best[0]:best=(i,j)
+   i=j
+  else:i+=1
+ if best[1]-best[0]<2:raise R.ErroMotor('Não foi possível reconhecer a cabeça inteira deste alvo com segurança. Nenhum rastreamento foi aplicado.')
+ trimmed=len(rows)-(best[1]-best[0])
+ if trimmed:
+  base['rows']=rows=rows[best[0]:best[1]]
+  for segment in base.get('segments')or[]:
+   if segment.get('primary'):segment.update(start=rows[0]['time'],end=rows[-1]['time'],samples=len(rows))
+  if all(isinstance(base.get(k),(int,float))for k in ('inPoint','outPoint','fps')):
+   expected=int(np.ceil((base['outPoint']-base['inPoint'])*base['fps']-1e-7));base['coverage']=round(min(1.,len(rows)/max(1,expected)),4)
+ report=dict(method=FACE_FALLBACK_METHOD,reason='no-reliable-head-measurement',headScheduledReads=len(plan),headMeasurements=accepted,outsideFrameRowsRemoved=trimmed)
+ ref['headFallback']=copy.deepcopy(report)
+ stats=base['stats'];stats['headFallback']=report
+ stats.update(headScheduledReads=len(plan),headMeasurements=accepted,headSeconds=round(head_seconds,3),seconds=round(time.perf_counter()-started,3))
+ stats['phaseSeconds']=dict(model=round(model_ready-started,3),face=round(face_done-model_ready,3),head=round(head_done-face_done,3),fusion=0.)
+ base['warnings'].append(FACE_FALLBACK_WARNING)
+ return base
+
 def finish_head(job,options,progress,started,model_ready,face_done,base,groups,measurements,step,fps,plan,accepted,head_seconds,parser,mfps,cancelled):
  import anchor_rosto as R
  head_done=time.perf_counter();runs=[]
  for group,m in zip(groups,measurements):runs.extend(head_runs(group,m,fps,step,face_fallback=True))
- if not runs:raise R.ErroMotor('Não foi possível reconhecer a cabeça inteira deste alvo com segurança. Nenhum rastreamento foi aplicado.')
+ if not runs:return face_reference_fallback(base,plan,accepted,head_seconds,started,model_ready,face_done,head_done)
  from anchor_head_motion import stabilize as stabilize_occlusion,METHOD as OCCLUSION_METHOD
  occlusion_reports=[stabilize_occlusion(run)for run in runs]
  from anchor_gap_motion import bridge
@@ -287,6 +357,8 @@ def finish_head(job,options,progress,started,model_ready,face_done,base,groups,m
  base['quality']=R.medir_qualidade(primary,fps,[])
  base['trackingReference']['stabilization']['contourMotion']='selected-headwear-top-motion-v4-supported'
  base['trackingReference']['stabilization']['transitionDeshake']=dict(method=DESHAKE_METHOD,windowSeconds=DESHAKE_WINDOW)
+ base['trackingReference']['association']['instanceVerification']='dual-crop-support-v1'
+ stats['headInstanceVerification']=dict(method='dual-crop-support-v1',**getattr(parser,'instance_checks',{}))
  stats['trajectoryDeshake']=dict(method=DESHAKE_METHOD,rows=sum(r['rows']for r in deshake_reports),transitions=sum(r['transitions']for r in deshake_reports),propagatedRows=sum(r['propagatedRows']for r in deshake_reports),maxCorrectionPixels=max([r['maxCorrectionPixels']for r in deshake_reports]or[0.]))
  if stats['headMissingMeasurements']:base['warnings'].append('Algumas leituras do contorno foram perdidas. O rosto selecionado mantém o movimento nesses intervalos; contornos propagados ficam identificados.')
  if progress:progress(.99,stats['decodedFrames'],stats['decodedFrames']/max(1e-6,time.perf_counter()-started))

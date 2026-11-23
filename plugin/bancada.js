@@ -1,7 +1,7 @@
 (() => {
  'use strict';
  const startup=require('./startup.js').gate;
- const $=id=>document.getElementById(id),panel=$('bancada'),api=window.AnchorIntegration,G=require('./preview-geometry.js'),H=require('./preview-host.js');
+ const $=id=>document.getElementById(id),panel=$('bancada'),api=window.AnchorIntegration,G=require('./preview-geometry.js'),H=require('./preview-host.js'),W=require('./selection-watch.js'),PREVIEW_LIMIT_MS=12000;
  panel.style.width='100%';panel.style.height='100%';panel.style.marginLeft='0px';panel.style.marginRight='0px';
  // sourcePicked vale para o take em que a origem foi escolhida (pickedFor); a releitura do mesmo take não a desfaz.
  let source=0,sourcePicked=false,pickedFor,format=null,selected=null,frame=null,reading=false,closed=false,epoch=0,lastKey,mode='auto';
@@ -70,29 +70,35 @@
  async function refresh(){
   if(!startup.active||reading||closed||api.busy)return;reading=true;
   try{
-   const next=await H.read(require('premierepro'));
+   const next=await W.bounded(H.read(require('premierepro')),W.HOST_LIMIT_MS,'O Premiere não informou o take selecionado a tempo.');
    const changedFormat=format&&selected&&String(selected.sequence.guid)===String(next.sequence.guid)&&(format.width!==next.format.width||format.height!==next.format.height||format.pixelAspect!==next.format.pixelAspect);
    format=next.format;selected=next;if(changedFormat&&api.notifySequenceFormat)api.notifySequenceFormat();
    if(next.key!==pickedFor)sourcePicked=false;
    if(next.key!==lastKey){lastKey=next.key;const ticket=++epoch;await discard();$('bFirstMessage').textContent=next.reason||'Lendo o primeiro frame…';sync();
-    if(next.key&&source===0){
-     try{
-      const captured=await H.capture(require('premierepro'),require('uxp'),next,()=>ticket===epoch&&!closed&&source===0);
-      if(ticket!==epoch||closed){await captured.file.delete();return;}frame=captured;$('bFirstImage').setAttribute('src',frame.url);$('bFirstImage').style.display='block';$('bFirstMessage').textContent='';
-     }catch(error){
-      // A failed or superseded thumbnail must not erase valid sequence geometry
-      // or disable framing controls. The next selected take can still refresh.
-      if(ticket!==epoch||closed)return;
-      $('bFirstMessage').textContent='Prévia indisponível.';$('bFirstMessage').setAttribute('title',String(error.message||error));
-      console.warn('[Dynamic Anchor Bancada] capture',error);
-     }
-    }
+    // 1.7.6: a prévia corre à parte. Quem acompanha a seleção não espera o Premiere exportar o quadro.
+    if(next.key&&source===0)preview(next,ticket);
    }
    // Origem padrão pelo tipo do trajeto já carregado (máscara abre em Máscara, rosto em Rosto), salvo escolha manual.
    {const kind=api.loadedSourceKind?api.loadedSourceKind():null;if((kind===0||kind===1)&&kind!==source&&!sourcePicked){source=kind;$('bSource').selectedIndex=kind;api.selectTrackingSource(kind);}}
    sync();
   }catch(error){epoch++;lastKey=undefined;selected=null;format=null;await discard();$('bFirstMessage').textContent='Primeiro frame indisponível. '+String(error.message||error);if(!/^Abra um(?: projeto|a sequência) no Premiere\.$/.test(String(error.message||error)))console.warn('[Dynamic Anchor Bancada] preview',error);sync();}
   finally{reading=false;}
+ }
+ async function preview(next,ticket){
+  const current=()=>ticket===epoch&&!closed&&source===0;
+  const job=H.capture(require('premierepro'),require('uxp'),next,current);
+  try{
+   const captured=await W.bounded(job,PREVIEW_LIMIT_MS,'O Premiere não exportou o primeiro frame em '+PREVIEW_LIMIT_MS/1000+' s.');
+   if(!current()){await captured.file.delete();return;}frame=captured;$('bFirstImage').setAttribute('src',frame.url);$('bFirstImage').style.display='block';$('bFirstMessage').textContent='';
+  }catch(error){
+   // Exportação que responde depois do limite: o arquivo atrasado é apagado.
+   if(error&&error.code==='host-timeout'){job.then(late=>late.file.delete()).catch(()=>{});if(api.note)api.note('PRÉVIA: '+error.message);}
+   // A failed or superseded thumbnail must not erase valid sequence geometry
+   // or disable framing controls. The next selected take can still refresh.
+   if(!current())return;
+   $('bFirstMessage').textContent='Prévia indisponível.';$('bFirstMessage').setAttribute('title',String(error.message||error));
+   console.warn('[Dynamic Anchor Bancada] capture',error);
+  }
  }
  const theme=name=>{panel.classList.toggle('light',String(name).toLowerCase()==='light');reflow();};try{theme(document.theme.getCurrent());document.theme.onUpdated.addListener(theme);}catch(_){}
  // Borda pintada (teste no Premiere, opção 2): a caixa de fora tem a cor da borda e uma camada interna 1 px menor

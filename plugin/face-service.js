@@ -2,7 +2,7 @@
 // Cliente do serviço local do motor de rosto (motor-rosto/anchor_servico.py).
 // O UXP não inicia processos com argumentos nem lê sua saída; o motor roda como
 // serviço HTTP só em 127.0.0.1 e o painel conversa com ele por fetch.
-const PORT=47833,BASE='http://127.0.0.1:'+PORT,API=1,ENGINE='face-yunet-v1',MIN_VERSION='0.5.2';
+const PORT=47833,BASE='http://127.0.0.1:'+PORT,API=1,ENGINE='face-yunet-v1',MIN_VERSION='0.5.3';
 const E=require('./face-errors.js');
 // Fábrica (não subclasse de Error): no UXP, subclasses de Error podem perder
 // a mensagem. Funciona com e sem "new".

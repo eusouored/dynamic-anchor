@@ -3,6 +3,7 @@
 // chegar ao fluxo de aplicação. Não toca no projeto.
 const T=require('./trajectory.js'),I=require('./integrity.js'),S=require('./face-service.js'),V=require('./video-reference.js');
 const normalize=p=>String(p||'').replace(/^\\\\\?\\/,'').replace(/\\/g,'/').toLowerCase();
+const isFaceFallback=ref=>ref?.method==='selected-face-center-v1'&&ref.headFallback?.method==='selected-face-reference-fallback-v1';
 function verify(result,job,options={}){
   if(!result||result.format!=='anchor-face-track'||![1,2].includes(result.version))throw new S.ServiceError('Resposta do motor em formato incompatível.','invalid');
   const finite=v=>typeof v==='number'&&Number.isFinite(v);
@@ -19,7 +20,10 @@ function verify(result,job,options={}){
   const adaptive=['adaptativo','cabeca'].includes(options?.referencia),isAdaptive=require('./adaptive-reference.js').isAdaptive(result.trackingReference);
   if(adaptive!==isAdaptive)throw new S.ServiceError('Referência adaptativa diferente da solicitada; nada foi aplicado.','invalid');
   if(adaptive){
-    if((options.referencia==='cabeca')!==require('./head-reference.js').isHead(result.trackingReference))throw new S.ServiceError('A referência de cabeça difere da solicitada.','invalid');
+    // 1.7.6: sem nenhuma leitura confiável da cabeça, o motor 0.5.3 devolve o trajeto do rosto,
+    // marcado e com aviso. Só esse caso explícito substitui a cabeça pedida.
+    const headFallback=options.referencia==='cabeca'&&isFaceFallback(result.trackingReference);
+    if(!headFallback&&(options.referencia==='cabeca')!==require('./head-reference.js').isHead(result.trackingReference))throw new S.ServiceError('A referência de cabeça difere da solicitada.','invalid');
     require('./adaptive-reference.js').validate(result.trackingReference);
     const asked=options.passo==='auto'||options.passo===undefined?1:options.passo;
     if(result.trackingReference.sampling.step!==asked||result.stats?.step!==asked)throw new S.ServiceError('Velocidade adaptativa diferente da solicitada; nada foi aplicado.','invalid');

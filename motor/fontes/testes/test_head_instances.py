@@ -2,6 +2,14 @@ import unittest,sys,numpy as np
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]));import anchor_head as H
 class InstanceTests(unittest.TestCase):
+ def test_larger_selected_face_does_not_absorb_smaller_rival_hair(self):
+  from anchor_instances import selected_labels
+  labels=np.zeros((200,240),np.uint8);labels[35:150,60:200]=17;labels[70:140,70:130]=1;labels[90:135,140:170]=1
+  row=dict(x=100.,y=100.,width=60.,height=90.,otherFaces=[dict(x=155.,y=110.,width=30.,height=45.)])
+  isolated=selected_labels(labels,(0,0,240,200),row)
+  self.assertEqual(isolated[35,170],0)
+  self.assertEqual(isolated[100,100],1)
+  self.assertEqual(isolated[35,80],17)
  def test_background_accessory_cannot_join_target_hair_to_second_face(self):
   labels=np.zeros((160,160),np.uint8);labels[52:125,58:92]=1;labels[25:100,35:64]=17;labels[38:55,54:85]=17;labels[0:55,84:160]=18;labels[35:65,105:125]=1
   row=dict(x=75.,y=88.,width=36.,height=72.,otherFaces=[dict(x=115.,y=50.,width=20.,height=30.)]);b=H.extract_bounds(labels,(0,0,160,160),row);self.assertIsNotNone(b);self.assertEqual(b['top'],25.);self.assertLess(b['right'],105.)

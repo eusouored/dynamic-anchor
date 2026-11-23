@@ -7,7 +7,7 @@
   const revealTaskFor=id=>{if(ui.revealTaskFor)ui.revealTaskFor(id);};
   const layout=require('./layout.js');
   const C=native?require('./core.js'):window.AnchorCore;
-  const I=require('./integrity.js'),E=require('./editing.js');
+  const I=require('./integrity.js'),E=require('./editing.js'),W=require('./selection-watch.js');
   let dataRepository=null,selectionWatcher=null,trajectoryNeedsConfirmation=false,selectionReadEpoch=0,selectionLoading=false;
   const metrics={};let tools=null,fillFraming=false,selectionStamp=null,draftTimer=null,restoring=false,preferencesTouched=false,batchRunning=false,operationPhase=null,taskRevision=0,panelDisposed=false;const drafts=new Map();
   const timed=async(name,fn,accumulate=false)=>{const start=Date.now();try{return await fn();}finally{metrics[name]=(accumulate?(metrics[name]||0):0)+Date.now()-start;}};
@@ -40,10 +40,10 @@
     $('sourceInfo').textContent='Nenhum trecho carregado';$('maskInfo').textContent='Selecione o clipe com a máscara rastreada.';
     $('formatInfo').textContent='';$('dataCount').textContent='';$('maskChooser').className='hidden';$('properties').className='hidden';
   }
-  const ready=(async()=>{if(!native)return;try{const folder=await require('uxp').storage.localFileSystem.getDataFolder();dataRepository=require('./repository.js').createRepository(folder);try{history=await(await folder.getEntry('anchor-session.log')).read();}catch(_){}journalFile=await folder.createFile('anchor-session.log',{overwrite:true});await journalFile.write(history.slice(-18000)+'\n=== Dynamic Anchor 1.7.5 ===\n');}catch(e){journalError=e;}})();
+  const ready=(async()=>{if(!native)return;try{const folder=await require('uxp').storage.localFileSystem.getDataFolder();dataRepository=require('./repository.js').createRepository(folder);try{history=await(await folder.getEntry('anchor-session.log')).read();}catch(_){}journalFile=await folder.createFile('anchor-session.log',{overwrite:true});await journalFile.write(history.slice(-18000)+'\n=== Dynamic Anchor 1.7.6 ===\n');}catch(e){journalError=e;}})();
   // Grava o registro em disco sem interromper nada (eventos do motor de rosto).
-  async function persistLog(){await ready;if(!native||journalError||!journalFile)return false;try{await journalFile.write((history.slice(-18000)+'\n=== Dynamic Anchor 1.7.5 ===\n'+$('log').value).slice(-60000));return true;}catch(_){return false;}}
-  async function checkpoint(s){if(busy){const phase=ui.describePhase(s);if(phase){operationPhase=phase;status(phase);updateCard();}}await ready;log(s);if(native){if(journalError||!journalFile)throw new Error('Registro de diagnóstico indisponível. Aplicação interrompida.');await journalFile.write((history.slice(-18000)+'\n=== Dynamic Anchor 1.7.5 ===\n'+$('log').value).slice(-60000));}}
+  async function persistLog(){await ready;if(!native||journalError||!journalFile)return false;try{await journalFile.write((history.slice(-18000)+'\n=== Dynamic Anchor 1.7.6 ===\n'+$('log').value).slice(-60000));return true;}catch(_){return false;}}
+  async function checkpoint(s){if(busy){const phase=ui.describePhase(s);if(phase){operationPhase=phase;status(phase);updateCard();}}await ready;log(s);if(native){if(journalError||!journalFile)throw new Error('Registro de diagnóstico indisponível. Aplicação interrompida.');await journalFile.write((history.slice(-18000)+'\n=== Dynamic Anchor 1.7.6 ===\n'+$('log').value).slice(-60000));}}
   const nativePoints=native?require('./linear-point-keyframes.js').createLinearPointKeyframes({ppro:require('premierepro'),loadTemplate:require('./native-linear-template.js').createNativeLinearTemplate({ppro:require('premierepro'),uxp:require('uxp')})}):null;
   const engine=native?require('./engine.js').createEngine(require('premierepro'),C,checkpoint,{pointKeyframes:nativePoints}):null;
   const repository={read:async key=>{await ready;if(!dataRepository)throw Error('Armazenamento indisponível.');return dataRepository.read(key);},write:async(key,value)=>{await ready;if(!dataRepository)throw Error('Armazenamento indisponível.');return dataRepository.write(key,value);}};
@@ -302,7 +302,10 @@
         target:{x:d.W/2,y:d.H/2},
         targetOffset:{x:d.W*numeric('offsetX',-50,50)/100,y:d.H*numeric('offsetY',-50,50)/100},
         maxRot:0,deadzone:0,
-        smoothWin:C.smoothWindow(smoothPercent,d.fps),anchor:{x:(d.SW||d.W)/2,y:(d.SH||d.H)/2},
+        // Prepared facial references already contain the motor's smoothing.
+        // Mask preferences survive task changes, but their hidden moving
+        // average must not displace an already prepared face/head path.
+        smoothWin:prepared?0:C.smoothWindow(smoothPercent,d.fps),anchor:{x:(d.SW||d.W)/2,y:(d.SH||d.H)/2},
         // Quadro do vídeo (rastreio); difere da sequência quando as proporções diferem.
         source:{w:d.SW||d.W,h:d.SH||d.H},
         // EXPERIMENTAL e desligado por padrão: só existe na especificação quando ligado (assinaturas antigas inalteradas).
@@ -490,12 +493,13 @@
       // The host can miss activation/selection events while the panel is
       // hidden or a project is reopening. Re-read identity on panel entry;
       // an unchanged selection keeps its draft and avoids another load.
-      const previousStamp=selectionStamp;await refreshSelection();
+      // 1.7.6: com limite, uma leitura que o Premiere não devolve não desliga esta conferência.
+      const previousStamp=selectionStamp;await W.bounded(refreshSelection(),W.HOST_LIMIT_MS,'O Premiere não respondeu à leitura da seleção em '+W.HOST_LIMIT_MS/1000+' s.');
       if(busy||selectionStamp!==previousStamp)return;
       const selected=lastSelected;if(!selected||selected.length!==1||I.canonical(selected)!==selectionStamp)return;
       const saved=await workflow.state(selected[0]);if(busy||I.canonical(selected)!==selectionStamp||saved.status!=='verified'||!saved.managedReceipt)return;
       const expected=saved.lastRun&&saved.lastRun.keyframes&&saved.lastRun.keyframes.after;
-      let check=null;try{check=await engine.appliedCheck(selected[0],saved.managedReceipt,expected);}catch(_){check={present:null,reason:'host'};}
+      let check=null;try{check=await W.bounded(engine.appliedCheck(selected[0],saved.managedReceipt,expected),W.HOST_LIMIT_MS,'O Premiere não respondeu à conferência da aplicação.');}catch(_){check={present:null,reason:'host'};}
       if(busy||I.canonical(selected)!==selectionStamp)return;
       if(!check||typeof check.present!=='boolean'){
         if(applicationUncertain)return;
@@ -559,12 +563,14 @@
     selectionWatcher=require('./selection-watch.js').watchSelection(require('premierepro'),{
       canRefresh:()=>{const panel=$('bancada');return !panelDisposed&&startup.active&&!busy&&document.hidden!==true&&panel&&panel.clientWidth>0&&panel.clientHeight>0;},
       needsRefresh:()=>selectionStamp===null||selectionLoading,
-      onChange:async isCurrent=>{await refreshSelection(isCurrent);if(isCurrent()&&window.AnchorBancada)await window.AnchorBancada.refresh();},onDirty:async()=>{if(busy)return;workflow.invalidateAll();if(masks.length){trajectoryNeedsConfirmation=true;controls();status('Projeto alterado. Aplicar usará o trajeto salvo; atualize a leitura se mudou a máscara.');}},onError:e=>log('SELEÇÃO: '+e.message)});
+      onChange:async isCurrent=>{await refreshSelection(isCurrent);if(isCurrent()&&window.AnchorBancada)await window.AnchorBancada.refresh();},onDirty:async()=>{if(busy)return;workflow.invalidateAll();if(masks.length){trajectoryNeedsConfirmation=true;controls();status('Projeto alterado. Aplicar usará o trajeto salvo; atualize a leitura se mudou a máscara.');}},onError:e=>note('SELEÇÃO: '+e.message)});
   });
 
+  // Avisos fora de uma operação (sem checkpoint depois): grava o registro na hora.
+  function note(text){log(text);persistLog().catch(()=>{});}
   function notifySequenceFormat(){if(busy||!lastSelected)return;if(tools&&tools.selectionChanged(lastSelected,{formatChanged:true}))status('O formato da sequência mudou. Clique em Analisar rosto para tentar novamente.');controls();}
-  if(typeof window!=='undefined')window.AnchorIntegration={get busy(){return busy;},loadedSourceKind(){const d=masks[selectedMask];return d?(d.type==='external-face'?0:1):null;},settingsSnapshot,settingsForTest:settings,updateTarget,refreshSelection,notifySequenceFormat,selectTrackingSource};
-  chooseMode('auto');updateTarget();log('Dynamic Anchor 1.7.5. Entrada: máscara rastreada do projeto salvo.');
+  if(typeof window!=='undefined')window.AnchorIntegration={get busy(){return busy;},loadedSourceKind(){const d=masks[selectedMask];return d?(d.type==='external-face'?0:1):null;},settingsSnapshot,settingsForTest:settings,updateTarget,refreshSelection,notifySequenceFormat,selectTrackingSource,note};
+  chooseMode('auto');updateTarget();log('Dynamic Anchor 1.7.6. Calibração de cabeça e enquadramento: 21/11/2026. Entrada: máscara rastreada do projeto salvo.');
 })();
 
 
