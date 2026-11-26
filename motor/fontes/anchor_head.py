@@ -219,18 +219,45 @@ def head_runs(rows,measurements,fps,step,face_fallback=False):
  for run in runs:fuse_reference(run)
  return runs
 
+HEAD_HEIGHT_WINDOW_SECONDS=1.5
+VERTICAL_REFERENCE='head-top-slow-height-v1'
+REFERENCE_HEIGHT_KEY='_headReferenceHeight'
+
+def slow_heights(times,heights,queries,window=HEAD_HEIGHT_WINDOW_SECONDS):
+ """0.5.4: altura lenta da cabeça, a mediana numa janela de ±1,5 s.
+ Aproximar-se ou afastar-se da câmera muda a altura devagar. Abaixar ou erguer a cabeça (e abrir a
+ boca ao falar) mexe só o queixo, por pouco tempo, e não pode arrastar o enquadramento."""
+ queries=np.asarray(queries,float);out=np.empty(len(queries))
+ lo=np.searchsorted(times,queries-window-1e-9);hi=np.searchsorted(times,queries+window+1e-9)
+ for i,(a,b)in enumerate(zip(lo,hi)):
+  if b>a:out[i]=float(np.median(heights[a:b]))
+  else:out[i]=float(heights[int(np.argmin(np.abs(times-queries[i])))])
+ return out
+
+def reference_y(bounds,height):
+ """Altura do ponto de referência: topo da cabeça + metade da altura lenta, dentro do contorno."""
+ return float(min(max(bounds['top']+height/2,bounds['top']),bounds['bottom']))
+
 def fuse_reference(run):
  """Follow stabilized facial motion; only the measured head-to-face offset is low-pass.
 
  Offline symmetric local fits introduce no causal delay to facial translation.
  Interpolated silhouettes never vote as extra independent observations. Each
  tracking run is processed separately, so no offset is inherited across a loss.
+ 0.5.4: the vertical reference is the head top plus half the slow head height (not the
+ contour centre). When the head pitches down the top barely moves and the chin drops; the
+ centre followed the chin and the frame cut the hair (and the jaw moved it while talking).
  """
  observed=[r for r in run if r['headBounds']['source']=='segmented']
- times=np.array([r['time']for r in observed]);offsets=np.array([[(r['headBounds'][a]+r['headBounds'][b])/2-r['faceTrackingPoint'][axis]for a,b,axis in [('left','right','x'),('top','bottom','y')]]for r in observed])
+ times=np.array([r['time']for r in observed]);heights=np.array([r['headBounds']['bottom']-r['headBounds']['top']for r in observed],float)
+ slow_observed=slow_heights(times,heights,times)
+ offsets=np.array([[(r['headBounds']['left']+r['headBounds']['right'])/2-r['faceTrackingPoint']['x'],reference_y(r['headBounds'],h)-r['faceTrackingPoint']['y']]for r,h in zip(observed,slow_observed)])
  from anchor_fit import linear_offsets
- fitted=linear_offsets(times,offsets,np.array([r['time']for r in run]),OFFSET_SIGMA_SECONDS)
- for row,offset in zip(run,fitted):row['trackingPoint']={axis:float(row['faceTrackingPoint'][axis]+offset[j])for j,axis in enumerate(('x','y'))}
+ run_times=np.array([r['time']for r in run]);fitted=linear_offsets(times,offsets,run_times,OFFSET_SIGMA_SECONDS);slow=slow_heights(times,heights,run_times)
+ for row,offset,h in zip(run,fitted,slow):
+  point={axis:float(row['faceTrackingPoint'][axis]+offset[j])for j,axis in enumerate(('x','y'))}
+  b=row['headBounds'];point['y']=float(min(max(point['y'],b['top']),b['bottom']))
+  row['trackingPoint']=point;row[REFERENCE_HEIGHT_KEY]=float(h)
 
 
 def read_plan(groups,observations,fps,in_point):
@@ -347,6 +374,9 @@ def finish_head(job,options,progress,started,model_ready,face_done,base,groups,m
  # 0.5.1: tremida localizada (troca detector/fluxo e contorno copiado do rosto), por trecho.
  from anchor_deshake import stabilize as deshake,METHOD as DESHAKE_METHOD,WINDOW_SECONDS as DESHAKE_WINDOW
  deshake_reports=[deshake(run,fps)for run in runs]
+ # A altura lenta só serve aos estágios do motor; não sai no trajeto.
+ for run in runs:
+  for row in run:row.pop(REFERENCE_HEIGHT_KEY,None)
  primary=max(runs,key=len);base['rows']=primary;base['segments']=[dict(start=run[0]['time'],end=run[-1]['time'],samples=len(run),primary=run is primary,rows=[]if run is primary else run)for run in runs]
  expected=int(np.ceil((job['outPoint']-job['inPoint'])*fps-1e-7));base['coverage']=round(min(1.,len(primary)/expected),4)
  base['trackingReference']=dict(method=METHOD,offset=dict(x=0,y=0),sampling=dict(method='fixed-stride-v1',step=step),model=dict(name='bisenet-resnet18-head',sha256=MODEL_SHA,runtime='onnxruntime'),applicationSampling=dict(method='analyzed-source-frames-v1',frameMapping='nearest-sequence-frame-v1'),smoothing=dict(method='robust-local-quadratic-v1',windowSeconds=.14),stabilization=dict(method='face-motion-head-offset-v1',offsetSigmaSeconds=OFFSET_SIGMA_SECONDS,measuredOffsetsOnly=True,maxHeadFraction=.5,headLossFallback='selected-face-scale-bidirectional-shape-v2',visualMotion='similarity-reference-v1',contourMotion='selected-headwear-top-motion-v3',headwearAdaptation=dict(method='visible-accessory-hysteresis-v1',seconds=.2,presentFraction=.12,absentFraction=.02,minimumVisibleParts=2),occlusionMotion=OCCLUSION_METHOD,shapeValidation='face-relative-temporal-shape-v1',offsetSupport='bounded-observed-envelope-v1',gapRecovery='bidirectional-csrt-head-gap-v1',occlusionMaxFraction=.06,occlusionBlendSeconds=.15,occlusionSigmaSeconds=.4),association=dict(method=SELECTION,identityVerified=False,instanceSeparation='face-seeded-competitive-v1'))
@@ -357,6 +387,7 @@ def finish_head(job,options,progress,started,model_ready,face_done,base,groups,m
  base['quality']=R.medir_qualidade(primary,fps,[])
  base['trackingReference']['stabilization']['contourMotion']='selected-headwear-top-motion-v4-supported'
  base['trackingReference']['stabilization']['transitionDeshake']=dict(method=DESHAKE_METHOD,windowSeconds=DESHAKE_WINDOW)
+ base['trackingReference']['stabilization']['verticalReference']=dict(method=VERTICAL_REFERENCE,heightWindowSeconds=HEAD_HEIGHT_WINDOW_SECONDS)
  base['trackingReference']['association']['instanceVerification']='dual-crop-support-v1'
  stats['headInstanceVerification']=dict(method='dual-crop-support-v1',**getattr(parser,'instance_checks',{}))
  stats['trajectoryDeshake']=dict(method=DESHAKE_METHOD,rows=sum(r['rows']for r in deshake_reports),transitions=sum(r['transitions']for r in deshake_reports),propagatedRows=sum(r['propagatedRows']for r in deshake_reports),maxCorrectionPixels=max([r['maxCorrectionPixels']for r in deshake_reports]or[0.]))

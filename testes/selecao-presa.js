@@ -15,8 +15,9 @@ const nome=()=>document.getElementById('takeName').textContent;
   // A exportação do primeiro quadro nunca volta.
   preview.capture=async()=>{t.captures.push(t.take.name);return new Promise(()=>{});};
   const selections=t.engine.selections.bind(t.engine);
-  // A leitura da seleção nunca volta para o Take C.
-  t.engine.selections=async()=>t.take.name==='Take C'&&!t.hungOnce?(t.hungOnce=true,new Promise(()=>{})):selections();
+  // 1.7.7: a leitura da seleção do Take C demora 18 s (Premiere salvando um projeto grande, por exemplo).
+  t.selectionCalls=0;
+  t.engine.selections=async()=>{t.selectionCalls++;if(t.take.name==='Take C'&&!t.hungOnce){t.hungOnce=true;t.callsAtSlowStart=t.selectionCalls;await new Promise(r=>setTimeout(r,18000));t.callsAtSlowEnd=t.selectionCalls;}return selections();};
   t.selection='single';t.take.name='Take A';t.take.projectItemId='item-a';
  });
  await page.waitForFunction(()=>document.getElementById('takeName').textContent.includes('Take A')&&__test.captures.includes('Take A'),{},{timeout:8000});
@@ -32,10 +33,16 @@ const nome=()=>document.getElementById('takeName').textContent;
  await page.waitForFunction(()=>__test.hungOnce===true,{},{timeout:8000});
  await page.evaluate(()=>{__test.take.name='Take D';__test.take.projectItemId='item-d';});
  const t0=Date.now();
+ await page.waitForFunction(()=>document.body.textContent.includes('O Premiere está demorando para responder ao painel'),{},{timeout:20000});
+ report.push('aviso de Premiere ocupado depois de '+((Date.now()-t0)/1000).toFixed(1)+' s');
  await page.waitForFunction(()=>document.getElementById('takeName').textContent.includes('Take D'),{},{timeout:25000});
- report.push('leitura presa do take C liberada; take D reconhecido em '+((Date.now()-t0)/1000).toFixed(1)+' s');
+ report.push('take D reconhecido assim que o Premiere respondeu ('+((Date.now()-t0)/1000).toFixed(1)+' s)');
+ const calls=await page.evaluate(()=>({start:__test.callsAtSlowStart,end:__test.callsAtSlowEnd}));
+ assert.equal(calls.end,calls.start,'nenhuma leitura nova enquanto a lenta estava pendente');
+ report.push('nenhuma consulta nova enquanto a lenta estava pendente');
  assert(await page.evaluate(()=>document.getElementById('log').value.includes('SELEÇÃO: O Premiere não respondeu à leitura da seleção')));
- report.push('espera esgotada registrada');
+ assert(await page.evaluate(()=>/PREMIERE LENTO: leitura da seleção levou 1[89],\d s \(passou do limite/.test(document.getElementById('log').value)));
+ report.push('espera e duração da leitura lenta registradas');
  await page.evaluate(()=>{__test.take.name='Take E';__test.take.projectItemId='item-e';});
  await page.waitForFunction(()=>document.getElementById('takeName').textContent.includes('Take E'),{},{timeout:8000});
  report.push('trocas seguintes normais');

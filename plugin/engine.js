@@ -26,36 +26,32 @@ function createEngine(ppro, C, checkpoint, options={}) {
     while(i<a.length&&j<b.length){const delta=a[i]-b[j];if(Math.abs(delta)<tolerance)return true;if(delta<0)i++;else j++;}
     return false;
   }
+  // 1.7.7: consultas independentes vão juntas ao Premiere. Com o Premiere ocupado, cada resposta
+  // pode levar décimos de segundo; uma a uma, a leitura de um take somava dezenas delas.
+  const range=n=>Array.from({length:n},(_,i)=>i);
   async function components(clip) {
-    const chain = await clip.getComponentChain(), out = [];
-    for (let i = 0, n = await chain.getComponentCount(); i < n; i++) {
-      const comp = await chain.getComponentAtIndex(i);
-      out.push({ comp, match: await comp.getMatchName(), name: await comp.getDisplayName() });
-    }
-    return out;
+    const chain = await clip.getComponentChain(), n = await chain.getComponentCount();
+    const comps = await Promise.all(range(n).map(i => chain.getComponentAtIndex(i)));
+    return Promise.all(comps.map(async comp => { const [match, name] = await Promise.all([comp.getMatchName(), comp.getDisplayName()]); return { comp, match, name }; }));
   }
   async function params(comp) {
-    const out = [];
-    for (let i = 0, n = await comp.getParamCount(); i < n; i++) {
-      const param = await comp.getParam(i);
-      out.push({ param, name: String(param.displayName || ''), index:i });
-    }
-    return out;
+    const n = await comp.getParamCount(), list = await Promise.all(range(n).map(i => comp.getParam(i)));
+    return list.map((param, index) => ({ param, name: String(param.displayName || ''), index }));
   }
   async function context(expected=null,all=false) {
     const project = await ppro.Project.getActiveProject();
     if (!project) throw new Error('Abra um projeto no Premiere.');
     const seq = await project.getActiveSequence();
     if (!seq) throw new Error('Abra uma sequência.');
-    const items = await (await seq.getSelection()).getTrackItems(), found = [];
-    for (const clip of items || []) {
-      if (typeof clip.getComponentChain !== 'function') continue;
+    const items = await (await seq.getSelection()).getTrackItems();
+    const read = await Promise.all((items || []).map(async clip => {
+      if (typeof clip.getComponentChain !== 'function') return null;
       const comps = await components(clip);
       const motion = comps.find(c => /AE\.ADBE Motion/i.test(c.match)) ||
         comps.find(c => /^(motion|movimento|movimiento|bewegung|mouvement)$/i.test(c.name));
-      if (motion) found.push({ clip, comps, motion });
-    }
-    if(expected){const matches=[];for(const info of found)if(sameSelection(await describe({project,seq,...info}),expected))matches.push(info);found.splice(0,found.length,...matches);}
+      return motion ? { clip, comps, motion } : null;
+    })), found = read.filter(Boolean);
+    if(expected){const same=await Promise.all(found.map(async info=>sameSelection(await describe({project,seq,...info}),expected)));found.splice(0,found.length,...found.filter((_,i)=>same[i]));}
     // B27: com um clipe esperado, "não achei" significa que ele mudou de posição ou de corte, não que falta seleção.
     if(expected&&!found.length)throw new Error('O clipe mudou de posição ou de corte desde a leitura. Leia o rastreamento de novo. Nada foi aplicado.');
     if(all){if(!found.length)throw new Error('Selecione pelo menos um clipe de vídeo.');return found.map(info=>({project,seq,...info}));}
@@ -515,7 +511,10 @@ function createEngine(ppro, C, checkpoint, options={}) {
   async function sequenceFormat(expected=null) {
     const bound=expected?await context(expected):null,project=bound?bound.project:await ppro.Project.getActiveProject(),seq=bound?bound.seq:project&&await project.getActiveSequence();
     if (!seq) throw new Error('Abra uma sequência no Premiere.');
-    const rect = await seq.getFrameSize(), ticks = Number(await seq.getTimebase());
+    return formatOf(seq);
+  }
+  async function formatOf(seq){
+    const [rect, timebase] = await Promise.all([seq.getFrameSize(), seq.getTimebase()]), ticks = Number(timebase);
     const width = rect.width === undefined ? rect.right-rect.left : rect.width;
     const height = rect.height === undefined ? rect.bottom-rect.top : rect.height;
     if (!(width>0 && height>0 && ticks>0)) throw new Error('Não foi possível ler o formato. Preencha os campos manualmente.');
@@ -523,15 +522,18 @@ function createEngine(ppro, C, checkpoint, options={}) {
   }
   async function describe(ctx) {
     const {project,seq,clip}=ctx;
-    if(Math.abs(Number(await clip.getSpeed())-1)>1e-8||await clip.isSpeedReversed())throw new Error('Use um clipe sem alteração de velocidade nem inversão.');
-    const description={projectPath:project.path,sequenceId:seq.guid.toString(),trackIndex:await clip.getTrackIndex(),name:await clip.getName(),
-      start:await H.clipSeconds(clip,'getStartTime','início do clipe na sequência'),end:await H.clipSeconds(clip,'getEndTime','fim do clipe na sequência'),
-      inPoint:await H.clipSeconds(clip,'getInPoint','entrada do clipe'),outPoint:await H.clipSeconds(clip,'getOutPoint','saída do clipe')};
+    // Todas as leituras juntas; os erros continuam saindo na ordem de antes (velocidade primeiro).
+    const settled=await Promise.allSettled([clip.getSpeed(),clip.isSpeedReversed(),clip.getTrackIndex(),clip.getName(),
+      H.clipSeconds(clip,'getStartTime','início do clipe na sequência'),H.clipSeconds(clip,'getEndTime','fim do clipe na sequência'),
+      H.clipSeconds(clip,'getInPoint','entrada do clipe'),H.clipSeconds(clip,'getOutPoint','saída do clipe'),
+      typeof clip.getProjectItem==='function'?clip.getProjectItem():null]);
+    const value=i=>{if(settled[i].status==='rejected')throw settled[i].reason;return settled[i].value;};
+    if(Math.abs(Number(value(0))-1)>1e-8||value(1))throw new Error('Use um clipe sem alteração de velocidade nem inversão.');
+    const description={projectPath:project.path,sequenceId:seq.guid.toString(),trackIndex:value(2),name:value(3),
+      start:value(4),end:value(5),inPoint:value(6),outPoint:value(7)};
     if(project.guid)description.projectGuid=project.guid.toString();
-    if(typeof clip.getProjectItem==='function'){
-      const item=await clip.getProjectItem();
-      if(item&&typeof item.getId==='function')description.projectItemId=String(await item.getId());
-    }
+    const item=value(8);
+    if(item&&typeof item.getId==='function')description.projectItemId=String(await item.getId());
     return description;
   }
   async function diagnose(){
@@ -592,10 +594,21 @@ function createEngine(ppro, C, checkpoint, options={}) {
     return {present:enough,reason:enough?null:'keyframes',keys};
   }
   async function verifyManaged(expected,receipt){await guard.validate(await context(expected),receipt);return true;}
+  const summarize=(ctx,selection)=>({selection,visibleMasks:ctx.comps.filter(c=>/mask/i.test(c.match)).length,transforms:ctx.comps.filter(c=>c.match==='AE.ADBE Geometry2').length});
   async function selectionSummary(){
-    const contexts=await context(null,true),out=[];
-    for(const ctx of contexts)out.push({selection:await describe(ctx),visibleMasks:ctx.comps.filter(c=>/mask/i.test(c.match)).length,transforms:ctx.comps.filter(c=>c.match==='AE.ADBE Geometry2').length});
-    return out;
+    const contexts=await context(null,true),selections=await Promise.all(contexts.map(describe));
+    return contexts.map((ctx,i)=>summarize(ctx,selections[i]));
+  }
+  // 1.7.7: a troca de take lia a seleção duas vezes (identidade e resumo das máscaras). Agora é uma leitura só.
+  async function selectionsWithSummary(){
+    const contexts=await context(null,true),selections=await Promise.all(contexts.map(describe));
+    return {selections,summary:contexts.map((ctx,i)=>summarize(ctx,selections[i]))};
+  }
+  // 1.7.7: tudo o que a análise precisa do Premiere numa leitura só (antes eram quatro leituras
+  // completas da seleção: take, formato da sequência, arquivo do clipe e a conferência final).
+  async function analysisSource(){
+    const ctx=await context(),[selection,sequenceFormat,media]=await Promise.all([describe(ctx),formatOf(ctx.seq),mediaOf(ctx)]);
+    return {selection,sequenceFormat,media};
   }
   async function navigate(expected,sourceTime){
     const ctx=await context(expected);
@@ -657,17 +670,18 @@ function createEngine(ppro, C, checkpoint, options={}) {
   }
   // Read-only: media and proxy paths for the external face engine. Each API is
   // optional; a missing path is reported, never guessed.
-  async function mediaSource(expected=null){
-    const ctx=await context(expected),clip=ctx.clip;
+  async function mediaSource(expected=null){return mediaOf(await context(expected));}
+  async function mediaOf(ctx){
+    const clip=ctx.clip;
     if(typeof clip.getProjectItem!=='function')throw Error('Este Premiere não informa o item de projeto do clipe.');
     const item=await clip.getProjectItem(),cast=ppro.ClipProjectItem&&typeof ppro.ClipProjectItem.cast==='function'?ppro.ClipProjectItem.cast(item):item;
     if(!cast)throw Error('O clipe selecionado não é uma mídia de arquivo.');
     const read=async name=>{try{if(typeof cast[name]!=='function')return null;const value=await cast[name]();return typeof value==='string'&&value?value:null;}catch(error){return null;}};
-    const mediaPath=await read('getMediaFilePath');
-    let proxyPath=null;try{if(typeof cast.hasProxy!=='function'||await cast.hasProxy())proxyPath=await read('getProxyPath');}catch(error){proxyPath=null;}
+    const proxy=async()=>{try{return typeof cast.hasProxy!=='function'||await cast.hasProxy()?await read('getProxyPath'):null;}catch(error){return null;}};
     // Dimensões e aspecto do pixel da mídia (metadados do Premiere): o motor analisa no quadro do vídeo.
-    let format=null;try{format=await require('./motion-source.js').readMediaFormat(ppro,ctx);}catch(error){format=null;}
-    return {mediaPath,proxyPath,format};
+    const format=async()=>{try{return await require('./motion-source.js').readMediaFormat(ppro,ctx);}catch(error){return null;}};
+    const [mediaPath,proxyPath,mediaFormat]=await Promise.all([read('getMediaFilePath'),proxy(),format()]);
+    return {mediaPath,proxyPath,format:mediaFormat};
   }
   // The product panel requests Motion explicitly. The old path remains only
   // for reading/verifying historical receipts and its existing contract tests;
@@ -702,7 +716,7 @@ function createEngine(ppro, C, checkpoint, options={}) {
     readSourceGeometrySignature:settings=>wantsMotion(settings)?motion().readSourceGeometrySignature(forMotion(settings)):readSourceGeometrySignature(settings),
     verifyManaged:(expected,receipt)=>motionReceipt(receipt)?motion().verifyManaged(expected,receipt):verifyManaged(expected,receipt),
     appliedCheck:(expected,receipt,expectedKeys)=>motionReceipt(receipt)?motion().appliedCheck(expected,receipt,expectedKeys):appliedCheck(expected,receipt,expectedKeys),
-    probe,diagnose,adoptLast,selectionSummary,navigate,sequenceFormat,selection,selections,saveForRead,exportAnalysisFrame,mediaSource};
+    probe,diagnose,adoptLast,selectionSummary,selectionsWithSummary,analysisSource,navigate,sequenceFormat,selection,selections,saveForRead,exportAnalysisFrame,mediaSource};
 }
 if (typeof module !== 'undefined') module.exports = {createEngine};
 

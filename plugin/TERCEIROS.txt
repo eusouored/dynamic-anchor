@@ -1,4 +1,4 @@
-DYNAMIC ANCHOR 1.7.6 — COMPONENTES DE TERCEIROS
+DYNAMIC ANCHOR 1.7.7 — COMPONENTES DE TERCEIROS
 ================================================
 
 O Dynamic Anchor é distribuído sob MIT + Commons Clause (ver LICENSE.txt).

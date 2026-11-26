@@ -8,7 +8,7 @@
   const layout=require('./layout.js');
   const C=native?require('./core.js'):window.AnchorCore;
   const I=require('./integrity.js'),E=require('./editing.js'),W=require('./selection-watch.js');
-  let dataRepository=null,selectionWatcher=null,trajectoryNeedsConfirmation=false,selectionReadEpoch=0,selectionLoading=false;
+  let hostWaitShown=false,dataRepository=null,selectionWatcher=null,trajectoryNeedsConfirmation=false,selectionReadEpoch=0,selectionLoading=false;
   const metrics={};let tools=null,fillFraming=false,selectionStamp=null,draftTimer=null,restoring=false,preferencesTouched=false,batchRunning=false,operationPhase=null,taskRevision=0,panelDisposed=false;const drafts=new Map();
   const timed=async(name,fn,accumulate=false)=>{const start=Date.now();try{return await fn();}finally{metrics[name]=(accumulate?(metrics[name]||0):0)+Date.now()-start;}};
   let adjustedKeys=new Set(),applicationUncertain=false,appliedKnown=null,lastSelected=null,unapplied=new Set(),appliedSelection=null,busy=false,mode='auto',masks=[],selectedMask=0,projectFile=null,journalFile=null,journalError=null,history='',batchMasks=[];
@@ -40,10 +40,10 @@
     $('sourceInfo').textContent='Nenhum trecho carregado';$('maskInfo').textContent='Selecione o clipe com a máscara rastreada.';
     $('formatInfo').textContent='';$('dataCount').textContent='';$('maskChooser').className='hidden';$('properties').className='hidden';
   }
-  const ready=(async()=>{if(!native)return;try{const folder=await require('uxp').storage.localFileSystem.getDataFolder();dataRepository=require('./repository.js').createRepository(folder);try{history=await(await folder.getEntry('anchor-session.log')).read();}catch(_){}journalFile=await folder.createFile('anchor-session.log',{overwrite:true});await journalFile.write(history.slice(-18000)+'\n=== Dynamic Anchor 1.7.6 ===\n');}catch(e){journalError=e;}})();
+  const ready=(async()=>{if(!native)return;try{const folder=await require('uxp').storage.localFileSystem.getDataFolder();dataRepository=require('./repository.js').createRepository(folder);try{history=await(await folder.getEntry('anchor-session.log')).read();}catch(_){}journalFile=await folder.createFile('anchor-session.log',{overwrite:true});await journalFile.write(history.slice(-18000)+'\n=== Dynamic Anchor 1.7.7 ===\n');}catch(e){journalError=e;}})();
   // Grava o registro em disco sem interromper nada (eventos do motor de rosto).
-  async function persistLog(){await ready;if(!native||journalError||!journalFile)return false;try{await journalFile.write((history.slice(-18000)+'\n=== Dynamic Anchor 1.7.6 ===\n'+$('log').value).slice(-60000));return true;}catch(_){return false;}}
-  async function checkpoint(s){if(busy){const phase=ui.describePhase(s);if(phase){operationPhase=phase;status(phase);updateCard();}}await ready;log(s);if(native){if(journalError||!journalFile)throw new Error('Registro de diagnóstico indisponível. Aplicação interrompida.');await journalFile.write((history.slice(-18000)+'\n=== Dynamic Anchor 1.7.6 ===\n'+$('log').value).slice(-60000));}}
+  async function persistLog(){await ready;if(!native||journalError||!journalFile)return false;try{await journalFile.write((history.slice(-18000)+'\n=== Dynamic Anchor 1.7.7 ===\n'+$('log').value).slice(-60000));return true;}catch(_){return false;}}
+  async function checkpoint(s){if(busy){const phase=ui.describePhase(s);if(phase){operationPhase=phase;status(phase);updateCard();}}await ready;log(s);if(native){if(journalError||!journalFile)throw new Error('Registro de diagnóstico indisponível. Aplicação interrompida.');await journalFile.write((history.slice(-18000)+'\n=== Dynamic Anchor 1.7.7 ===\n'+$('log').value).slice(-60000));}}
   const nativePoints=native?require('./linear-point-keyframes.js').createLinearPointKeyframes({ppro:require('premierepro'),loadTemplate:require('./native-linear-template.js').createNativeLinearTemplate({ppro:require('premierepro'),uxp:require('uxp')})}):null;
   const engine=native?require('./engine.js').createEngine(require('premierepro'),C,checkpoint,{pointKeyframes:nativePoints}):null;
   const repository={read:async key=>{await ready;if(!dataRepository)throw Error('Armazenamento indisponível.');return dataRepository.read(key);},write:async(key,value)=>{await ready;if(!dataRepository)throw Error('Armazenamento indisponível.');return dataRepository.write(key,value);}};
@@ -447,8 +447,9 @@
   async function refreshSelection(isCurrent=()=>true,force=false){
     if(!startup.active||busy||!engine)return;
     const callerCurrent=isCurrent,request=++selectionReadEpoch;isCurrent=()=>callerCurrent()&&request===selectionReadEpoch;
-    let selected,appliedMissing=false;
-    try{selected=engine.selections?await engine.selections():[await engine.selection()];}catch(e){if(isCurrent()){lastSelected=null;if(selectionStamp&&masks.length)drafts.set(selectionStamp,settingsSnapshot());selectionStamp=null;clearMasks();controls();status(e.message);if(tools&&tools.selectionChanged){const text=String(e&&e.message||e).trim(),selectionKnown=/^(Abra um projeto no Premiere\.|Abra uma sequência\.|Selecione um take na timeline\.|Selecione pelo menos um clipe de vídeo\.|Selecione um clipe de vídeo(?: com Movimento na timeline)?\.)$/i.test(text);tools.selectionChanged(null,{selectionKnown});}}return;}
+    let selected,appliedMissing=false,summary=null;
+    // 1.7.7: identidade e resumo das máscaras numa leitura só do Premiere.
+    try{if(engine.selectionsWithSummary){const both=await engine.selectionsWithSummary();selected=both.selections;summary=both.summary;}else selected=engine.selections?await engine.selections():[await engine.selection()];}catch(e){if(isCurrent()){lastSelected=null;if(selectionStamp&&masks.length)drafts.set(selectionStamp,settingsSnapshot());selectionStamp=null;clearMasks();controls();status(e.message);if(tools&&tools.selectionChanged){const text=String(e&&e.message||e).trim(),selectionKnown=/^(Abra um projeto no Premiere\.|Abra uma sequência\.|Selecione um take na timeline\.|Selecione pelo menos um clipe de vídeo\.|Selecione um clipe de vídeo(?: com Movimento na timeline)?\.)$/i.test(text);tools.selectionChanged(null,{selectionKnown});}}return;}
     const stamp=I.canonical(selected);
     if(!isCurrent())return;
     if(!force&&stamp===selectionStamp&&!selectionLoading)return;
@@ -476,7 +477,7 @@
       }
       if(drafts.has(stamp))restoreSettings(drafts.get(stamp));else if(selected.length===1&&saved.settings)restoreSettings(saved.settings);
       if(!(tools&&tools.running))status(applicationUncertain?'Não foi possível confirmar a aplicação atual. Confira o clipe no Premiere.':appliedMissing?'O resultado aplicado foi alterado ou desfeito no Premiere. Clique em Aplicar para aplicar estes ajustes de novo.':stored.some(d=>!d.confirmed)?(masks[selectedMask]?.type==='external-face'?'Trajeto salvo. Analise de novo se o trecho mudou.':'Trajeto salvo. Releia a máscara se ela mudou.'):'Trajeto disponível nesta sessão.',appliedMissing||applicationUncertain);
-    }else{let visible=null;if(engine.selectionSummary)try{visible=await engine.selectionSummary();}catch(_){}if(!isCurrent()||busy)return;$('maskInfo').textContent=visible&&visible.some(item=>item.visibleMasks>0)?'Há máscara exposta pela API. Clique em Ler máscara para extrair o movimento.':'Máscaras ainda não conferidas. Clique em Ler máscara.';if(!(tools&&tools.running))status('Seleção reconhecida. Nenhum projeto foi salvo para esta consulta.');}
+    }else{let visible=summary;if(!visible&&engine.selectionSummary)try{visible=await engine.selectionSummary();}catch(_){}if(!isCurrent()||busy)return;$('maskInfo').textContent=visible&&visible.some(item=>item.visibleMasks>0)?'Há máscara exposta pela API. Clique em Ler máscara para extrair o movimento.':'Máscaras ainda não conferidas. Clique em Ler máscara.';if(!(tools&&tools.running))status('Seleção reconhecida. Nenhum projeto foi salvo para esta consulta.');}
     selectionLoading=false;lastSelected=selected;controls();
     if(tools&&tools.selectionChanged)tools.selectionChanged(selected,{appliedMissing,appliedUncertain:applicationUncertain,appliedPresent:!appliedMissing&&appliedKnown===true});
   }
@@ -494,7 +495,11 @@
       // hidden or a project is reopening. Re-read identity on panel entry;
       // an unchanged selection keeps its draft and avoids another load.
       // 1.7.6: com limite, uma leitura que o Premiere não devolve não desliga esta conferência.
-      const previousStamp=selectionStamp;await W.bounded(refreshSelection(),W.HOST_LIMIT_MS,'O Premiere não respondeu à leitura da seleção em '+W.HOST_LIMIT_MS/1000+' s.');
+      // Com o acompanhamento ativo, basta a conferência leve dele; se o take mudou (ou ele está lendo),
+      // a leitura dele cuida do resto. A leitura completa aqui só sem o acompanhamento.
+      const previousStamp=selectionStamp;
+      if(selectionWatcher&&selectionWatcher.recover){if(await selectionWatcher.recover())return;}
+      else await W.bounded(refreshSelection(),W.HOST_LIMIT_MS,'O Premiere não respondeu à leitura da seleção em '+W.HOST_LIMIT_MS/1000+' s.');
       if(busy||selectionStamp!==previousStamp)return;
       const selected=lastSelected;if(!selected||selected.length!==1||I.canonical(selected)!==selectionStamp)return;
       const saved=await workflow.state(selected[0]);if(busy||I.canonical(selected)!==selectionStamp||saved.status!=='verified'||!saved.managedReceipt)return;
@@ -563,14 +568,18 @@
     selectionWatcher=require('./selection-watch.js').watchSelection(require('premierepro'),{
       canRefresh:()=>{const panel=$('bancada');return !panelDisposed&&startup.active&&!busy&&document.hidden!==true&&panel&&panel.clientWidth>0&&panel.clientHeight>0;},
       needsRefresh:()=>selectionStamp===null||selectionLoading,
-      onChange:async isCurrent=>{await refreshSelection(isCurrent);if(isCurrent()&&window.AnchorBancada)await window.AnchorBancada.refresh();},onDirty:async()=>{if(busy)return;workflow.invalidateAll();if(masks.length){trajectoryNeedsConfirmation=true;controls();status('Projeto alterado. Aplicar usará o trajeto salvo; atualize a leitura se mudou a máscara.');}},onError:e=>note('SELEÇÃO: '+e.message)});
+      onChange:async isCurrent=>{await refreshSelection(isCurrent);if(isCurrent()&&window.AnchorBancada)await window.AnchorBancada.refresh();},onDirty:async()=>{if(busy)return;workflow.invalidateAll();if(masks.length){trajectoryNeedsConfirmation=true;controls();status('Projeto alterado. Aplicar usará o trajeto salvo; atualize a leitura se mudou a máscara.');}},onError:e=>note('SELEÇÃO: '+e.message),
+      // 1.7.7: o editor vê que a espera é do Premiere; o registro guarda quanto cada leitura lenta levou.
+      onStall:on=>{if(panelDisposed)return;if(on){hostWaitShown=true;if(!busy)status('O Premiere está demorando para responder ao painel (salvando o projeto ou ocupado com outra tarefa). O take selecionado aparece aqui assim que ele responder.',true);}
+        else if(hostWaitShown){hostWaitShown=false;if(!busy)status('O Premiere voltou a responder.');}},
+      onSlow:({what,ms,timedOut})=>note('PREMIERE LENTO: '+what+' levou '+(ms/1000).toFixed(1).replace('.',',')+' s'+(timedOut?' (passou do limite de espera; nenhuma consulta nova foi feita enquanto isso)':'')+'.')});
   });
 
   // Avisos fora de uma operação (sem checkpoint depois): grava o registro na hora.
   function note(text){log(text);persistLog().catch(()=>{});}
   function notifySequenceFormat(){if(busy||!lastSelected)return;if(tools&&tools.selectionChanged(lastSelected,{formatChanged:true}))status('O formato da sequência mudou. Clique em Analisar rosto para tentar novamente.');controls();}
-  if(typeof window!=='undefined')window.AnchorIntegration={get busy(){return busy;},loadedSourceKind(){const d=masks[selectedMask];return d?(d.type==='external-face'?0:1):null;},settingsSnapshot,settingsForTest:settings,updateTarget,refreshSelection,notifySequenceFormat,selectTrackingSource,note};
-  chooseMode('auto');updateTarget();log('Dynamic Anchor 1.7.6. Calibração de cabeça e enquadramento: 21/11/2026. Entrada: máscara rastreada do projeto salvo.');
+  if(typeof window!=='undefined')window.AnchorIntegration={get busy(){return busy;},loadedSourceKind(){const d=masks[selectedMask];return d?(d.type==='external-face'?0:1):null;},settingsSnapshot,settingsForTest:settings,updateTarget,refreshSelection,notifySequenceFormat,selectTrackingSource,note,hostStalled:()=>!!(selectionWatcher&&selectionWatcher.stalled)};
+  chooseMode('auto');updateTarget();log('Dynamic Anchor 1.7.7. Calibração de cabeça e enquadramento: 21/11/2026. Entrada: máscara rastreada do projeto salvo.');
 })();
 
 

@@ -1,7 +1,7 @@
 (() => {
  'use strict';
  const startup=require('./startup.js').gate;
- const $=id=>document.getElementById(id),panel=$('bancada'),api=window.AnchorIntegration,G=require('./preview-geometry.js'),H=require('./preview-host.js'),W=require('./selection-watch.js'),PREVIEW_LIMIT_MS=12000;
+ const $=id=>document.getElementById(id),panel=$('bancada'),api=window.AnchorIntegration,G=require('./preview-geometry.js'),H=require('./preview-host.js'),W=require('./selection-watch.js'),PREVIEW_LIMIT_MS=12000,PREVIEW_DELAY_MS=500;
  panel.style.width='100%';panel.style.height='100%';panel.style.marginLeft='0px';panel.style.marginRight='0px';
  // sourcePicked vale para o take em que a origem foi escolhida (pickedFor); a releitura do mesmo take não a desfaz.
  let source=0,sourcePicked=false,pickedFor,format=null,selected=null,frame=null,reading=false,closed=false,epoch=0,lastKey,mode='auto';
@@ -76,7 +76,9 @@
    if(next.key!==pickedFor)sourcePicked=false;
    if(next.key!==lastKey){lastKey=next.key;const ticket=++epoch;await discard();$('bFirstMessage').textContent=next.reason||'Lendo o primeiro frame…';sync();
     // 1.7.6: a prévia corre à parte. Quem acompanha a seleção não espera o Premiere exportar o quadro.
-    if(next.key&&source===0)preview(next,ticket);
+    // Espera a seleção assentar e nunca exporta o quadro durante uma análise ou aplicação,
+    // para não disputar o Premiere com elas; adiada, a prévia é pedida de novo na próxima leitura.
+    if(next.key&&source===0)setTimeout(()=>{if(ticket!==epoch||closed||source!==0)return;if(api.busy||(api.hostStalled&&api.hostStalled())){if(lastKey===next.key)lastKey=undefined;return;}preview(next,ticket);},PREVIEW_DELAY_MS);
    }
    // Origem padrão pelo tipo do trajeto já carregado (máscara abre em Máscara, rosto em Rosto), salvo escolha manual.
    {const kind=api.loadedSourceKind?api.loadedSourceKind():null;if((kind===0||kind===1)&&kind!==source&&!sourcePicked){source=kind;$('bSource').selectedIndex=kind;api.selectTrackingSource(kind);}}

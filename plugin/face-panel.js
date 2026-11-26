@@ -251,14 +251,18 @@ function initializeFacePanel({$,engine,workflow,repository=null,run,status,log,d
   async function prepare(){
     if(disposed)throw new S.ServiceError('Painel fechado.','cancelled');
     stepTimes={};sourceLogged=false;
-    const selection=await step('seleção',async()=>I.clone(await engine.selection()));current=selection;notice=null;
+    // 1.7.7: take, formato da sequência e arquivo saem de uma leitura só do Premiere (antes eram
+    // quatro leituras completas da seleção, uma consulta por vez). Sendo uma leitura só, não há
+    // como o take mudar entre elas; a aplicação confere o clipe de novo antes de gravar.
+    const snapshot=engine.analysisSource?await step('seleção',()=>engine.analysisSource()):null;
+    const selection=snapshot?I.clone(snapshot.selection):await step('seleção',async()=>I.clone(await engine.selection()));current=selection;notice=null;
     // Inicia pelo clique em Analisar, antes das leituras demoradas do Premiere.
     await step('identificação do trecho',()=>T.identity(selection));
       const st=await ensureEngine();if(disposed)throw new S.ServiceError('Painel fechado.','cancelled');engineState='ready';
-    const sequenceFormat=await step('formato da sequência',()=>engine.sequenceFormat(selection));
-    const media=await step('arquivo do clipe',()=>engine.mediaSource(selection));
+    const sequenceFormat=await step('formato da sequência',()=>snapshot?snapshot.sequenceFormat:engine.sequenceFormat(selection));
+    const media=await step('arquivo do clipe',()=>snapshot?snapshot.media:engine.mediaSource(selection));
     if(!media||!media.mediaPath)throw Error('[arquivo do clipe] O Premiere não informou o arquivo deste clipe. Use um clipe de vídeo comum (não sequência aninhada nem gráfico).');
-    if(I.canonical(await engine.selection())!==I.canonical(selection))throw Error('[seleção] O trecho selecionado mudou durante a leitura. Selecione o take e analise de novo. Nada foi analisado.');
+    if(!snapshot&&I.canonical(await engine.selection())!==I.canonical(selection))throw Error('[seleção] O trecho selecionado mudou durante a leitura. Selecione o take e analise de novo. Nada foi analisado.');
     // Proporção da mídia diferente da sequência (ex.: 16:9 numa sequência vertical): o motor analisa no
     // quadro do vídeo (mesma proporção da mídia) e o enquadramento converte para a sequência.
     const format=analysisFormat(sequenceFormat,media);

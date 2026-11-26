@@ -4,7 +4,7 @@
   <img alt="Dynamic Anchor" src="assets/logo-light.svg" height="62">
 </picture>
 <p><strong>Mantenha o rosto ou o ponto de interesse no quadro.</strong></p>
-<p><a href="https://github.com/eusouored/dynamic-anchor/releases/latest"><strong>Baixar para Windows</strong></a> · <a href="https://github.com/eusouored/dynamic-anchor/releases">Ver versões</a></p>
+<p><a href="../../releases/latest"><strong>Baixar para Windows</strong></a> · <a href="../../releases">Ver versões</a></p>
 <p>Windows 10 ou 11 (64 bits) · Premiere Pro 26.0 ou mais recente</p>
 </div>
 
@@ -18,7 +18,7 @@ Painel para o Adobe Premiere Pro (Windows) que acompanha um rosto (ou uma másca
 
 ## Instalação
 
-Baixe o instalador na [versão mais recente](https://github.com/eusouored/dynamic-anchor/releases/latest) e siga as telas. Ele usa o instalador oficial da Adobe que vem com o Creative Cloud. Depois, abra o Premiere e abra o painel **Dynamic Anchor** pelo menu **Janela**.
+Baixe o instalador na [versão mais recente](../../releases/latest) e siga as telas. Ele usa o instalador oficial da Adobe que vem com o Creative Cloud. Depois, abra o Premiere e abra o painel **Dynamic Anchor** pelo menu **Janela**.
 
 Requisitos: Windows 10 ou 11 (64 bits) e Premiere Pro 26 ou mais novo. A GPU é usada pelo modelo de cabeça (DirectML) quando disponível; sem ela, o motor usa a CPU.
 
@@ -32,20 +32,6 @@ Requisitos: Windows 10 ou 11 (64 bits) e Premiere Pro 26 ou mais novo. A GPU é 
 <p><em>Ajuste a posição do alvo, o zoom e a suavização antes de aplicar o rastreamento.</em></p>
 <p>Capturas com dados de demonstração · <a href="assets/interface-dark.png">Tema escuro</a> · <a href="assets/interface-light.png">Tema claro</a></p>
 </div>
-
-### Correções anteriores preservadas
-
-O painel recupera a seleção ao voltar ao foco e, enquanto está visível e ocioso, confere a cada 2,5 segundos se o take mudou. A conferência não lê efeitos, keyframes ou mídia, nem exporta frames. A leitura completa só é pedida quando há mudança ou uma seleção incompleta. As consultas param durante operações, com o painel oculto e ao descarregar.
-
-A entrada do resultado também trata leituras reais de recuperação de perda que caem no mesmo quadro da sequência, como em mídia 59,94 fps numa sequência de 30 fps. Mantém a leitura válida mais próxima do quadro e preserva as coordenadas do trajeto. Leituras inválidas e duplicatas fora desse caso continuam sendo recusadas. Os algoritmos de rastreamento e os modelos permanecem os mesmos.
-
-### Proteções de inicialização e encerramento
-
-Ao restaurar a área de trabalho, o painel aguarda um clique ou uma tecla dentro dele. Passar o mouse, receber foco ou simplesmente abrir o Premiere não ativa as consultas de seleção ou de status. A conferência de seleção não inicia o motor.
-
-O motor só é iniciado por uma ação explícita, como Analisar rosto, Iniciar motor ou Preparar motor. O serviço observa os processos do Premiere presentes na sua sessão do Windows quando inicia. Quando todas as instâncias vinculadas encerram, ele cancela o trabalho em andamento, fecha a conexão local e termina, inclusive se o Premiere sair inesperadamente. Não depende de uma mensagem de fechamento enviada pelo painel ou de contatos periódicos pela rede. Sem um Premiere aberto ou sem conseguir monitorá-lo, o serviço não inicia. Abra o Premiere antes de ligar ou preparar o motor.
-
-A revisão continua em 1.7.5 / motor 0.5.2. O painel exige a proteção `premiere-process-lifetime-v1` para aceitar o motor; uma cópia anterior, mesmo numerada 0.5.2, precisa ser substituída. Os algoritmos de rastreamento e os modelos foram preservados.
 
 ## Como funciona
 
@@ -64,6 +50,12 @@ Na versão 1.7.6, a exportação da prévia foi separada do acompanhamento da se
 
 Quando não há nenhuma leitura confiável da cabeça inteira, o motor 0.5.3 mantém o trajeto do rosto escolhido e mostra um aviso. Se o ponto do rosto sai da imagem, usa o maior trecho em que a referência permanece dentro do quadro e informa a cobertura correspondente.
 
+Na versão 1.7.7 o painel faz bem menos consultas ao Premiere e envia juntas as que não dependem umas das outras. Com o Premiere ocupado, cada resposta pode levar décimos de segundo, e antes as consultas eram feitas uma de cada vez. Analisar fazia 189 consultas antes de chamar o motor; agora faz 54, numa única leitura do take, do formato da sequência e do arquivo. Reconhecer uma troca de take caiu de 66 para 33 consultas. A prévia do primeiro quadro caiu de 91 para 31 e só é exportada depois que a seleção assenta, nunca durante uma análise ou aplicação. O teste `testes/consultas-premiere.js` conta as consultas e mede o tempo com um Premiere lento simulado.
+
+Quando o Premiere demora a responder (salvando um projeto grande, por exemplo), o painel não pergunta de novo enquanto a consulta anterior está pendente. Antes, as consultas se acumulavam na fila do Premiere. Depois de 60 segundos sem resposta, o painel desiste da consulta pendente e lê de novo. Ele avisa que a espera é do Premiere, registra quanto cada leitura lenta levou e espaça as conferências periódicas enquanto o Premiere está lento.
+
+No motor 0.5.4, a altura do ponto de referência é o topo da cabeça mais metade da altura "lenta" da cabeça (mediana de 1,5 s), e não mais o centro do contorno. Ao abaixar a cabeça, o queixo desce e o topo quase não se mexe. O centro descia junto e o enquadramento cortava o cabelo. Aproximar-se ou afastar-se da câmera continua sendo acompanhado.
+
 ### Correções anteriores preservadas
 
 O painel recupera a seleção ao voltar ao foco e, enquanto está visível e ocioso, confere a cada 2,5 segundos se o take mudou. A conferência não lê efeitos, keyframes ou mídia, nem exporta frames. A leitura completa só é pedida quando há mudança ou uma seleção incompleta. As consultas param durante operações, com o painel oculto e ao descarregar.
@@ -76,7 +68,7 @@ Ao restaurar a área de trabalho, o painel aguarda um clique ou uma tecla dentro
 
 O motor só é iniciado por uma ação explícita, como Analisar rosto, Iniciar motor ou Preparar motor. O serviço observa os processos do Premiere presentes na sua sessão do Windows quando inicia. Quando todas as instâncias vinculadas encerram, ele cancela o trabalho em andamento, fecha a conexão local e termina, inclusive se o Premiere sair inesperadamente. Não depende de uma mensagem de fechamento enviada pelo painel ou de contatos periódicos pela rede. Sem um Premiere aberto ou sem conseguir monitorá-lo, o serviço não inicia. Abra o Premiere antes de ligar ou preparar o motor.
 
-A revisão continua em 1.7.5 / motor 0.5.2. O painel exige a proteção `premiere-process-lifetime-v1` para aceitar o motor; uma cópia anterior, mesmo numerada 0.5.2, precisa ser substituída. Os algoritmos de rastreamento e os modelos foram preservados.
+A versão atual é 1.7.7 / motor 0.5.4. O painel exige a proteção `premiere-process-lifetime-v1` para aceitar o motor; uma cópia anterior, mesmo numerada 0.5.4, precisa ser substituída.
 
 ## Estrutura
 
@@ -125,6 +117,13 @@ node testes/alinhamento.js
 ```
 
 Capturas nos dois temas, 136 tamanhos de painel e alinhamento das linhas.
+
+```bash
+node testes/consultas-premiere.js
+node testes/selecao-presa.js
+```
+
+Consultas ao Premiere de cada etapa, medidas com um Premiere lento simulado, e um Premiere que demora a responder: o painel avisa e não acumula consultas.
 
 ```bash
 node testes/motor-real.js <anchor-motor.exe> <video> <início> <fim> <pasta-de-saída>

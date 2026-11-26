@@ -14,7 +14,10 @@ def repair(rows,cancelled=None):
   report['rejectedCount']+=1
   if len(report['rejected'])<20:report['rejected'].append({'time':t,'reason':reason})
  def geometry(row):
-  b=row['headBounds'];return b,(b['left']+b['right'])/2,(b['top']+b['bottom'])/2,max(1,min(b['right']-b['left'],b['bottom']-b['top']))
+  # 0.5.4: mesma referência vertical do trajeto (topo + metade da altura lenta), quando conhecida.
+  b=row['headBounds'];h=row.get('_headReferenceHeight')
+  y=min(max(b['top']+h/2,b['top']),b['bottom'])if isinstance(h,(int,float))and math.isfinite(h)and h>0 else(b['top']+b['bottom'])/2
+  return b,(b['left']+b['right'])/2,y,max(1,min(b['right']-b['left'],b['bottom']-b['top']))
  def trusted(row):
   b,x,y,size=geometry(row);v=row.get('headVisibility')or{};p=row['trackingPoint']
   return row.get('source')!='interpolated'and b.get('source')=='segmented'and v.get('occluded')is False and v.get('groups',0)>=2 and math.hypot(p['x']-x,p['y']-y)<=size*TRUSTED_RESIDUAL_FRACTION

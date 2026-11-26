@@ -1,7 +1,7 @@
 'use strict';
 const fs=require('fs'),path=require('path');
 const {launch,open}=require('./harness');
-const OUT=path.join(__dirname,'out');const report={environment:'SIMULAÇÃO: painel real em Chromium; Premiere, motor, seleção e gravação simulados pelo harness.',shots:[],checks:[],errors:[]};
+const OUT=path.join(__dirname,'out');const report={environment:'SIMULAÃ‡ÃƒO: Chromium headless com index.html e JS reais do painel; Premiere, motor, seleÃ§Ã£o e gravaÃ§Ã£o simulados por testes/harness.js',shots:[],checks:[],errors:[]};
 const check=(name,ok,detail)=>report.checks.push({name,ok:!!ok,detail});
 async function shot(page,file,el){const p=path.join(OUT,file);if(el)await page.locator(el).screenshot({path:p});else await page.screenshot({path:p});report.shots.push(file);}
 async function geom(page){return page.evaluate(()=>{const r=e=>{const b=document.getElementById(e)?.getBoundingClientRect();return b&&{x:b.x,y:b.y,w:b.width,h:b.height};};return {frame:r('targetFrame'),dot:r('targetDot'),overflow:document.body.scrollWidth>innerWidth+1,take:document.getElementById('takeName').textContent.trim(),face:document.getElementById('faceState').textContent.trim(),status:document.getElementById('status').textContent.trim(),apply:document.getElementById('btnApply').disabled,analyze:document.getElementById('btnFaceAuto').disabled,trajectory:document.getElementById('trajectoryState').textContent.trim()};});}
